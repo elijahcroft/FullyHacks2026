@@ -11,7 +11,7 @@ import WebTileLayer from '@arcgis/core/layers/WebTileLayer.js'
 import Point from '@arcgis/core/geometry/Point.js'
 import Polyline from '@arcgis/core/geometry/Polyline.js'
 import Polygon from '@arcgis/core/geometry/Polygon.js'
-import { normalizeLongitude, unwrapPathFromEnd } from '@/lib/longitude'
+import { normalizeLongitude, unwrapPathFromEnd, wrapLongitudeNear } from '@/lib/longitude'
 import type { Bottle, IncidentType, MapController } from '@/types'
 import { INCIDENT_CONFIGS } from '@/types'
 import type { InteractionMode } from './OceanMap'
@@ -47,8 +47,11 @@ interface BottleEntry {
   trail: Graphic | null
 }
 
-const GARBAGE_PATCH_BOUNDS = [
-  [-155, 25], [-135, 25], [-135, 45], [-155, 45], [-155, 25],
+// Organic, hand-crafted blob for the Great Pacific Garbage Patch gyre (lng, lat)
+const GARBAGE_PATCH_RING = [
+  [-161, 27], [-153, 24], [-143, 24], [-134, 28], [-131, 34],
+  [-133, 40], [-139, 46], [-148, 47], [-157, 45], [-163, 40],
+  [-165, 34], [-161, 27],
 ]
 
 // How long each lerp animation runs (slightly under the 1 s tick interval)
@@ -116,7 +119,9 @@ export default function ArcGISMap({
         if (!from || !to) continue
 
         const lat = from[0] + (to[0] - from[0]) * ease
-        const lng = from[1] + (to[1] - from[1]) * ease
+        // Unwrap target lng to be near `from` so lerp takes the short arc over the antimeridian
+        const toNearFrom = wrapLongitudeNear(to[1], from[1])
+        const lng = from[1] + (toNearFrom - from[1]) * ease
         dispPos.current.set(id, [lat, lng])
 
         const geo = makePt(lat, lng)
@@ -414,24 +419,75 @@ function hexToRgba(hex: string, alpha: number): number[] {
   return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16), alpha]
 }
 
+function seededRng(seed: number): () => number {
+  let s = seed | 0
+  return () => {
+    s = Math.imul(s, 1664525) + 1013904223 | 0
+    return (s >>> 0) / 4294967295
+  }
+}
+
+/** Generate an organic-looking polygon ring from a bounding box [lng, lat] pairs */
+function organicRing(south: number, west: number, north: number, east: number, seed: number): number[][] {
+  const rng = seededRng(seed)
+  const jit = (range: number) => (rng() - 0.5) * 2 * range
+  const hJ = (north - south) * 0.09  // vertical jitter budget
+  const wJ = (east - west) * 0.09    // horizontal jitter budget
+  const pts: number[][] = []
+  const steps = 6
+
+  // Bottom edge: west→east
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    pts.push([west + (east - west) * t, south + jit(hJ)])
+  }
+  // Right edge: south→north (skip first point)
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps
+    pts.push([east + jit(wJ), south + (north - south) * t])
+  }
+  // Top edge: east→west (skip first point)
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps
+    pts.push([east - (east - west) * t, north + jit(hJ)])
+  }
+  // Left edge: north→south (skip first and last)
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps
+    pts.push([west + jit(wJ), north - (north - south) * t])
+  }
+  pts.push(pts[0])  // close ring
+  return pts
+}
+
 function drawAnnotations(layer: GraphicsLayer, activeOverlays: Set<OverlayType>) {
   layer.removeAll()
   for (const zone of MARINE_ZONES) {
     if (!activeOverlays.has(zone.type)) continue
     const [south, west, north, east] = zone.bounds
+    const seed = zone.id.split('').reduce((acc, c) => acc * 31 + c.charCodeAt(0), 0)
+    const ring = organicRing(south, west, north, east, seed)
     layer.add(new Graphic({
-      geometry: new Polygon({ rings: [[[west,south],[east,south],[east,north],[west,north],[west,south]]], spatialReference: { wkid: 4326 } }),
-      symbol: { type: 'simple-fill', color: hexToRgba(zone.color, 0.12), outline: { color: hexToRgba(zone.color, 0.7), width: 1, style: 'dash' } },
+      geometry: new Polygon({ rings: [ring], spatialReference: { wkid: 4326 } }),
+      symbol: { type: 'simple-fill', color: hexToRgba(zone.color, 0.12), outline: { color: hexToRgba(zone.color, 0.75), width: 1, style: 'short-dash' } },
+    }))
+    // Name label at centroid
+    const cLng = (west + east) / 2
+    const cLat = (south + north) / 2
+    const labelText = zone.name.replace(' / ', '\n').replace(' (', '\n(')
+    layer.add(new Graphic({
+      geometry: new Point({ longitude: cLng, latitude: cLat, spatialReference: { wkid: 4326 } }),
+      symbol: { type: 'text', text: labelText, color: hexToRgba(zone.color, 0.95), haloColor: [5, 10, 22, 0.92], haloSize: 1.5, font: { size: 10, family: 'Avenir Next', weight: 'bold' }, horizontalAlignment: 'center' },
     }))
   }
   layer.addMany([
     new Graphic({
-      geometry: new Polygon({ rings: [GARBAGE_PATCH_BOUNDS], spatialReference: { wkid: 4326 } }),
-      symbol: { type: 'simple-fill', color: [255,107,43,0.08], outline: { color: [255,107,43,0.85], width: 1.2, style: 'dash' } },
+      geometry: new Polygon({ rings: [GARBAGE_PATCH_RING], spatialReference: { wkid: 4326 } }),
+      symbol: { type: 'simple-fill', color: [255,107,43,0.08], outline: { color: [255,107,43,0.85], width: 1.4, style: 'short-dash' } },
     }),
     new Graphic({
-      geometry: new Point({ longitude: -145, latitude: 35, spatialReference: { wkid: 4326 } }),
-      symbol: { type: 'text', text: 'Great Pacific\nGarbage Patch', color: [255,209,189,0.95], haloColor: [8,15,31,0.95], haloSize: 1, font: { size: 11, family: 'Avenir Next', weight: 'bold' } },
+      geometry: new Point({ longitude: -148, latitude: 36, spatialReference: { wkid: 4326 } }),
+      symbol: { type: 'text', text: 'Great Pacific\nGarbage Patch', color: [255,209,189,0.95], haloColor: [8,15,31,0.95], haloSize: 1.5, font: { size: 11, family: 'Avenir Next', weight: 'bold' }, horizontalAlignment: 'center' },
     }),
   ])
 }

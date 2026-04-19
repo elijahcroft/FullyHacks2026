@@ -8,6 +8,7 @@ interface Props {
   bottles: Bottle[]
   mapRef: RefObject<MapController | null>
   onReset: () => void
+  onSelect: (bottle: Bottle) => void
 }
 
 const STATUS_LABEL: Record<Bottle['status'], string> = {
@@ -22,7 +23,7 @@ const STATUS_COLOR: Record<Bottle['status'], string> = {
   ashore: 'text-emerald-400',
 }
 
-export function BottleList({ bottles, mapRef, onReset }: Props) {
+export function BottleList({ bottles, mapRef, onReset, onSelect }: Props) {
   const flyTo = (bottle: Bottle) => {
     mapRef.current?.flyTo(bottle.current_lat, bottle.current_lng, 5)
   }
@@ -47,7 +48,7 @@ export function BottleList({ bottles, mapRef, onReset }: Props) {
           return (
             <button
               key={bottle.id}
-              onClick={() => flyTo(bottle)}
+              onClick={() => { flyTo(bottle); onSelect(bottle) }}
               className="w-full text-left bg-[#080f1f]/80 border border-white/10 rounded-lg px-3 py-2.5 backdrop-blur-sm hover:border-white/25 transition-colors group"
             >
               <div className="flex items-center gap-1.5">

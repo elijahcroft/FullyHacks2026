@@ -79,7 +79,7 @@ export function OceanMap() {
       {/* Left sidebar — mode toggle + bottle list stacked */}
       <div className="absolute left-3 top-3 bottom-3 z-[1000] w-56 flex flex-col gap-2 pointer-events-none">
         <ModeToggle mode={mode} onChange={setMode} />
-        <BottleList bottles={bottles} mapRef={mapRef} onReset={clearAllBottles} />
+        <BottleList bottles={bottles} mapRef={mapRef} onReset={clearAllBottles} onSelect={handleBottleClick} />
       </div>
 
       {dropTarget && (
