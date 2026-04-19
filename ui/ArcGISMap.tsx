@@ -11,6 +11,7 @@ import WebTileLayer from '@arcgis/core/layers/WebTileLayer.js'
 import Point from '@arcgis/core/geometry/Point.js'
 import Polyline from '@arcgis/core/geometry/Polyline.js'
 import Polygon from '@arcgis/core/geometry/Polygon.js'
+import { normalizeLongitude, unwrapPathFromEnd } from '@/lib/longitude'
 import type { Bottle, MapController } from '@/types'
 import type { InteractionMode } from './OceanMap'
 import { useSimulationContext } from '@/simulation/context'
@@ -325,9 +326,11 @@ function createPlumeGraphic(bottle: Bottle) {
 function createTrailGraphic(bottle: Bottle, isSelected: boolean) {
   if (bottle.path.length < 2) return null
 
+  const path = unwrapPathFromEnd(bottle.path, bottle.current_lng)
+
   return new Graphic({
     geometry: new Polyline({
-      paths: [bottle.path.map(([lat, lng]) => [normalizeLongitude(lng), lat])],
+      paths: [path.map(([lat, lng]) => [lng, lat])],
       spatialReference: { wkid: 4326 },
     }),
     symbol: {
@@ -346,8 +349,4 @@ function getBottleColor(status: Bottle['status']) {
   if (status === 'garbage_patch') return [255, 120, 40, 0.95]
   if (status === 'ashore') return [80, 204, 122, 0.95]
   return [80, 180, 255, 0.95]
-}
-
-function normalizeLongitude(lng: number) {
-  return ((lng + 180) % 360 + 360) % 360 - 180
 }

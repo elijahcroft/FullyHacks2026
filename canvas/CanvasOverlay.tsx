@@ -5,6 +5,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
+import { normalizeLongitude, unwrapPathFromEnd, wrapLongitudeNear } from '@/lib/longitude'
 import type { Bottle } from '@/types'
 
 interface Props {
@@ -57,15 +58,15 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
         // Initialise render position on first sight, then lerp toward actual
         let rp = renderPos.current.get(bottle.id)
         if (!rp) {
-          rp = { lat: bottle.current_lat, lng: bottle.current_lng }
+          rp = { lat: bottle.current_lat, lng: normalizeLongitude(bottle.current_lng) }
           renderPos.current.set(bottle.id, rp)
         } else {
+          const targetLng = wrapLongitudeNear(bottle.current_lng, rp.lng)
           rp.lat += (bottle.current_lat - rp.lat) * LERP
-          rp.lng += (bottle.current_lng - rp.lng) * LERP
+          rp.lng += (targetLng - rp.lng) * LERP
         }
 
-        const wrappedLng = ((rp.lng + 180) % 360 + 360) % 360 - 180
-        const pt = map.latLngToContainerPoint([rp.lat, wrappedLng])
+        const pt = map.latLngToContainerPoint([rp.lat, wrapLongitudeNear(rp.lng, map.getCenter().lng)])
         const isSelected = selectedBottleRef.current?.id === bottle.id
 
         drawTrail(ctx, bottle, map, rp)
@@ -100,9 +101,11 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
       const my = e.clientY - rect.top
       for (const bottle of bottlesRef.current) {
         const rp = renderPos.current.get(bottle.id)
-        const rawLng = rp?.lng ?? bottle.current_lng
-        const wrappedLng = ((rawLng + 180) % 360 + 360) % 360 - 180
-        const pt = map.latLngToContainerPoint([rp?.lat ?? bottle.current_lat, wrappedLng])
+        const rawLng = rp?.lng ?? normalizeLongitude(bottle.current_lng)
+        const pt = map.latLngToContainerPoint([
+          rp?.lat ?? bottle.current_lat,
+          wrapLongitudeNear(rawLng, map.getCenter().lng),
+        ])
         if (Math.hypot(mx - pt.x, my - pt.y) < 16) {
           onBottleClick(bottle)
           e.stopPropagation()
@@ -123,7 +126,7 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
 function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap, rp: { lat: number; lng: number }) {
   if (bottle.path.length < 2) return
 
-  const slice = bottle.path
+  const slice = unwrapPathFromEnd(bottle.path, rp.lng)
 
   const color = bottle.status === 'garbage_patch' ? '255,120,40' : '80,160,255'
 
@@ -135,7 +138,8 @@ function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMa
     ctx.lineTo(wp.x, wp.y)
   }
   // Connect to smoothed position
-  const cur = map.latLngToContainerPoint([rp.lat, rp.lng])
+  const curLng = wrapLongitudeNear(rp.lng, slice[slice.length - 1][1])
+  const cur = map.latLngToContainerPoint([rp.lat, curLng])
   ctx.lineTo(cur.x, cur.y)
   ctx.strokeStyle = `rgba(${color},0.2)`
   ctx.lineWidth = 1.5

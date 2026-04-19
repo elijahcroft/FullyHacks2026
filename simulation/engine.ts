@@ -12,6 +12,7 @@
 
 import { sampleFlowField } from './flowField'
 import { isOnLand } from '@/lib/landPolygons'
+import { normalizeLongitude } from '@/lib/longitude'
 import type { Bottle, BottleStatus, FlowField, FlowFieldMeta, TickOptions } from '@/types'
 
 // Great Pacific Garbage Patch bounding box
@@ -45,9 +46,10 @@ export function tickBottle(
   if (bottle.status !== 'drifting') return bottle
 
   const dt = opts.dtDays * opts.speedMultiplier
+  const currentLng = normalizeLongitude(bottle.current_lng)
 
   // Sample current at current position
-  const current = sampleFlowField(field, meta, bottle.current_lat, bottle.current_lng)
+  const current = sampleFlowField(field, meta, bottle.current_lat, currentLng)
 
   // Scale current from m/s → degrees/day  (86400 s/day * DEG_PER_METER)
   const scale = 86_400 * DEG_PER_METER * dt
@@ -55,7 +57,7 @@ export function tickBottle(
   const turbV = (Math.random() - 0.5) * opts.turbulence
 
   const newLat = bottle.current_lat + (current.v + turbV) * scale
-  const newLng = bottle.current_lng + (current.u + turbU) * scale
+  const newLng = normalizeLongitude(currentLng + (current.u + turbU) * scale)
   const newDays = bottle.days_drifted + dt
 
   // Determine new status
