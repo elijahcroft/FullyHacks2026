@@ -9,17 +9,31 @@ import { CanvasOverlay } from '@/canvas/CanvasOverlay'
 import { FlowOverlay } from '@/canvas/FlowOverlay'
 import { useSimulationContext } from '@/simulation/context'
 import type { Bottle } from '@/types'
+import type { InteractionMode } from './OceanMap'
 import L from 'leaflet'
 
 interface Props {
   bottles: Bottle[]
   selectedBottle: Bottle | null
+  mode: InteractionMode
   onMapClick: (lat: number, lng: number) => void
   onBottleClick: (bottle: Bottle) => void
 }
 
-function MapClickHandler({ onMapClick }: { onMapClick: Props['onMapClick'] }) {
-  useMapEvents({ click(e) { onMapClick(e.latlng.lat, e.latlng.lng) } })
+function MapClickHandler({ mode, onMapClick }: { mode: InteractionMode; onMapClick: Props['onMapClick'] }) {
+  useMapEvents({
+    click(e) {
+      if (mode === 'bottle') onMapClick(e.latlng.lat, e.latlng.lng)
+    },
+  })
+  return null
+}
+
+function CursorController({ mode }: { mode: InteractionMode }) {
+  const map = useMap()
+  useEffect(() => {
+    map.getContainer().style.cursor = mode === 'bottle' ? 'crosshair' : ''
+  }, [map, mode])
   return null
 }
 
@@ -73,13 +87,14 @@ function ZoomControls() {
 const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
 const LABEL_TILE = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png'
 
-function MapLayers({ bottles, selectedBottle, onMapClick, onBottleClick }: Props) {
+function MapLayers({ bottles, selectedBottle, mode, onMapClick, onBottleClick }: Props) {
   const { showFlowField } = useSimulationContext()
   return (
     <>
       <TileLayer url={DARK_TILE} attribution='&copy; CartoDB' />
       <TileLayer url={LABEL_TILE} pane="shadowPane" />
-      <MapClickHandler onMapClick={onMapClick} />
+      <MapClickHandler mode={mode} onMapClick={onMapClick} />
+      <CursorController mode={mode} />
       <GarbagePatchOverlay />
       {showFlowField && <FlowOverlay />}
       <CanvasOverlay bottles={bottles} selectedBottle={selectedBottle} onBottleClick={onBottleClick} />
@@ -88,7 +103,7 @@ function MapLayers({ bottles, selectedBottle, onMapClick, onBottleClick }: Props
   )
 }
 
-export default function LeafletMap({ bottles, selectedBottle, onMapClick, onBottleClick }: Props) {
+export default function LeafletMap({ bottles, selectedBottle, mode, onMapClick, onBottleClick }: Props) {
   return (
     <MapContainer
       center={[20, -150]}
@@ -102,6 +117,7 @@ export default function LeafletMap({ bottles, selectedBottle, onMapClick, onBott
       <MapLayers
         bottles={bottles}
         selectedBottle={selectedBottle}
+        mode={mode}
         onMapClick={onMapClick}
         onBottleClick={onBottleClick}
       />

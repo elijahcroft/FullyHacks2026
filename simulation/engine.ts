@@ -20,7 +20,7 @@ const GARBAGE_PATCH = { latMin: 25, latMax: 45, lngMin: -155, lngMax: -135 }
 const DEG_PER_METER = 1 / 111_000
 
 // How often to record a path waypoint (simulated days)
-const PATH_SAMPLE_INTERVAL = 30
+const PATH_SAMPLE_INTERVAL = 1
 
 const DEFAULT_OPTIONS: TickOptions = {
   dtDays: 1,
