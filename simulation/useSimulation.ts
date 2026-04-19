@@ -1,52 +1,61 @@
 'use client'
-/**
- * PERSON 2 — Flow Field + Simulation Engine
- *
- * Client-side tick loop. Reads speed/running from SimulationContext,
- * ticks all drifting bottles, and writes back via updateBottles().
- * Entirely local — no network calls.
- */
 
 import { useEffect, useRef } from 'react'
-import { loadFlowField, onLiveFieldReady } from '@/simulation/flowField'
+import { loadFlowField, getFieldForMonth, FLOW_FIELD_META } from '@/simulation/flowField'
 import { tickAll } from '@/simulation/engine'
 import { useSimulationContext } from '@/simulation/context'
-import type { Bottle, FlowField, FlowFieldMeta } from '@/types'
+import type { Bottle } from '@/types'
 
 const TICK_INTERVAL_MS = 1000
 
 export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle[]) => void) {
-  const { running, speedMultiplier } = useSimulationContext()
-  const fieldRef = useRef<{ field: FlowField; meta: FlowFieldMeta } | null>(null)
+  const { running, speedMultiplier, startDate, setSimDate } = useSimulationContext()
+
   const bottlesRef = useRef(bottles)
   const runningRef = useRef(running)
   const speedRef = useRef(speedMultiplier)
   const updateRef = useRef(updateBottles)
+  const setSimDateRef = useRef(setSimDate)
+  const startDateRef = useRef(startDate)
+  const simDaysRef = useRef(0)
 
   bottlesRef.current = bottles
   runningRef.current = running
   speedRef.current = speedMultiplier
   updateRef.current = updateBottles
+  setSimDateRef.current = setSimDate
+  startDateRef.current = startDate
 
+  // Trigger static field load + kick off monthly prefetch
   useEffect(() => {
-    loadFlowField().then((f) => { fieldRef.current = f })
-    onLiveFieldReady((f) => { fieldRef.current = f })
+    loadFlowField()
   }, [])
+
+  // Reset elapsed days when the user changes the start date
+  useEffect(() => {
+    simDaysRef.current = 0
+    setSimDateRef.current(startDate)
+  }, [startDate])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!runningRef.current || !fieldRef.current) return
+      if (!runningRef.current) return
 
-      const { field, meta } = fieldRef.current
+      simDaysRef.current += speedRef.current
+      const simDate = new Date(
+        startDateRef.current.getTime() + simDaysRef.current * 86_400_000,
+      )
+      setSimDateRef.current(simDate)
+
+      const field = getFieldForMonth(simDate.getMonth())
+      if (!field) return
+
       const drifting = bottlesRef.current.filter((b) => b.status === 'drifting')
       if (drifting.length === 0) return
 
-      // Run speedMultiplier sub-ticks of 1 simulated day each.
-      // Same total displacement as before, but in small steps — path waypoints
-      // record correctly and status detection fires mid-loop instead of skipping over.
       let current = drifting
       for (let i = 0; i < speedRef.current; i++) {
-        current = tickAll(current, field, meta, {
+        current = tickAll(current, field, FLOW_FIELD_META, {
           dtDays: 1,
           speedMultiplier: 1,
           turbulence: 0.05,
@@ -57,5 +66,5 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
     }, TICK_INTERVAL_MS)
 
     return () => clearInterval(interval)
-  }, []) // refs keep this stable — no restarts on re-render
+  }, []) // refs keep this stable — do not add deps
 }

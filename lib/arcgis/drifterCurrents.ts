@@ -31,6 +31,7 @@ export function buildFlowRenderer(flowSpeed: number) {
           { value: 0.2, color: [60, 196, 214, 0.7] },
           { value: 0.4, color: [123, 243, 196, 0.85] },
           { value: 0.8, color: [239, 255, 255, 0.95] },
+          
         ],
       },
     ],

@@ -44,3 +44,23 @@ html, body {
   color: rgba(255, 255, 255, 0.92) !important;
   border-color: rgba(255, 255, 255, 0.22) !important;
 }
+
+/* Dark-theme native date input */
+input[type="date"].sim-date-input {
+  color-scheme: dark;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  padding: 0;
+  width: 8rem;
+}
+input[type="date"].sim-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.4);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+}

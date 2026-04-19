@@ -1,33 +1,37 @@
 /**
- * Generates public/data/currentField.json from ArcGIS annual_drifter_mean_v3.
+ * Generates flow field JSON files from ArcGIS ocean current services.
  *
- * Fetches 18 LERC2D tiles that cover the globe at level 2 (0.25°/pixel),
- * decodes the raw F64 magnitude+direction values, then samples the decoded
- * data at our 1° grid. No authentication, no getSamples — just public tiles.
+ * Outputs:
+ *   public/data/currentField.json       — annual mean (fast initial fallback)
+ *   public/data/currents-01.json        — January climatology
+ *   ...
+ *   public/data/currents-12.json        — December climatology
  *
  * Usage:
  *   npm run gen:field
  */
 
 import { writeFileSync } from 'fs'
-import Lerc from 'lerc'
+import { decode as lercDecode, load as lercLoad } from 'lerc'
 import type { FlowField, FlowFieldMeta } from '../types/index'
 
-const SERVICE =
+const ANNUAL_SERVICE =
   'https://tiledimageservices.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/' +
   'annual_drifter_mean_v3/ImageServer'
 
-// Level 2: 0.25° per pixel, 256×256 pixels per tile
-const LEVEL      = 2
-const PIXEL_SIZE = 0.25
-const TILE_PX    = 256
-const ORIGIN_LNG = -180   // tile grid top-left
-const ORIGIN_LAT =   85
+const MONTHLY_SERVICE =
+  'https://tiledimageservices.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/' +
+  'Global_Ocean_Surface_Currents_from_Drifters__Monthly_Climatology_/ImageServer'
 
-// 6 cols × 3 rows = 18 tiles cover -180→204°lng, 85→-107°lat
-// (service valid extent is -180→180lng, -73→85lat — edge tiles have NoData outside)
+const LEVEL = 2
+const PIXEL_SIZE = 0.25
+const TILE_PX = 256
+const ORIGIN_LNG = -180
+const ORIGIN_LAT = 85
 const N_COLS = 6
 const N_ROWS = 3
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const meta: FlowFieldMeta = {
   latMin: -80, latMax: 80,
@@ -36,23 +40,35 @@ const meta: FlowFieldMeta = {
   rows: 161, cols: 361,
 }
 
+function monthTimestamp(m: number): number {
+  return new Date(2001, m, 15).getTime()
+}
+
 interface TilePixels {
-  mag: Float64Array
-  dir: Float64Array
+  mag: Float64Array | Float32Array
+  dir: Float64Array | Float32Array
   width: number
   height: number
 }
 
-async function fetchTile(row: number, col: number): Promise<TilePixels | null> {
+async function fetchTile(
+  serviceUrl: string,
+  row: number,
+  col: number,
+  time?: number,
+): Promise<TilePixels | null> {
   try {
-    const res = await fetch(`${SERVICE}/tile/${LEVEL}/${row}/${col}`)
+    const url = time !== undefined
+      ? `${serviceUrl}/tile/${LEVEL}/${row}/${col}?time=${time}`
+      : `${serviceUrl}/tile/${LEVEL}/${row}/${col}`
+    const res = await fetch(url)
     if (!res.ok) { console.warn(`  tile ${row}/${col}: HTTP ${res.status}`); return null }
     const buf = await res.arrayBuffer()
-    const decoded = Lerc.decode(new Uint8Array(buf).buffer)
+    const decoded = lercDecode(buf)
     return {
-      mag:    decoded.pixels[0] as Float64Array,
-      dir:    decoded.pixels[1] as Float64Array,
-      width:  decoded.width,
+      mag: decoded.pixels[0] as Float64Array,
+      dir: decoded.pixels[1] as Float64Array,
+      width: decoded.width,
       height: decoded.height,
     }
   } catch (e) {
@@ -61,17 +77,13 @@ async function fetchTile(row: number, col: number): Promise<TilePixels | null> {
   }
 }
 
-async function main() {
-  console.log(`Fetching ${N_ROWS * N_COLS} LERC2D tiles (level ${LEVEL}, ${PIXEL_SIZE}°/px)...`)
-
-  // Fetch all 18 tiles concurrently
+async function buildField(serviceUrl: string, time?: number): Promise<{ field: FlowField; filled: number }> {
   const tileFetches = Array.from({ length: N_ROWS }, (_, r) =>
-    Array.from({ length: N_COLS }, (_, c) => fetchTile(r, c))
+    Array.from({ length: N_COLS }, (_, c) => fetchTile(serviceUrl, r, c, time))
   )
   const tiles: (TilePixels | null)[][] = await Promise.all(
     tileFetches.map(row => Promise.all(row))
   )
-  console.log('Tiles fetched. Building 1° flow field...\n')
 
   const field: FlowField = []
   let filled = 0
@@ -83,14 +95,12 @@ async function main() {
     for (let col = 0; col < meta.cols; col++) {
       const lng = meta.lngMin + col * meta.lngStep
 
-      // Map (lat, lng) → global pixel index (origin top-left at ORIGIN_LNG, ORIGIN_LAT)
       const gPixY = (ORIGIN_LAT - lat) / PIXEL_SIZE
       const gPixX = (lng - ORIGIN_LNG) / PIXEL_SIZE
-
       const tRow = Math.floor(gPixY / TILE_PX)
       const tCol = Math.floor(gPixX / TILE_PX)
-      const pY   = Math.floor(gPixY) % TILE_PX
-      const pX   = Math.floor(gPixX) % TILE_PX
+      const pY = Math.floor(gPixY) % TILE_PX
+      const pX = Math.floor(gPixX) % TILE_PX
 
       const tile = (tRow >= 0 && tRow < N_ROWS && tCol >= 0 && tCol < N_COLS)
         ? tiles[tRow][tCol]
@@ -109,7 +119,6 @@ async function main() {
         continue
       }
 
-      // MagDir → u/v: direction is degrees CW from north (oceanographic "toward")
       const dirRad = (dir * Math.PI) / 180
       field[row][col] = {
         u: mag * Math.sin(dirRad),
@@ -119,12 +128,19 @@ async function main() {
     }
   }
 
-  writeFileSync('public/data/currentField.json', JSON.stringify({ meta, field }, null, 0))
+  return { field, filled }
+}
 
+async function main() {
+  await lercLoad()
   const total = meta.rows * meta.cols
-  console.log(`✓  Wrote public/data/currentField.json`)
-  console.log(`   ${filled}/${total} cells (${(filled / total * 100).toFixed(1)}%) have current data`)
-  console.log(`   Source: ArcGIS annual_drifter_mean_v3 (annual mean drifters, LERC2D)`)
+
+  // Primary flow field — use the monthly climatology service (same source as the visual renderer).
+  // The tile cache serves a single baked dataset regardless of time parameter, so one file covers all months.
+  console.log('Generating flow field (Monthly_Climatology_)...')
+  const { field, filled } = await buildField(MONTHLY_SERVICE)
+  writeFileSync('public/data/currentField.json', JSON.stringify({ meta, field }, null, 0))
+  console.log(`✓  ${filled}/${total} cells (${(filled/total*100).toFixed(1)}%) → public/data/currentField.json`)
 }
 
 main().catch(e => { console.error('✗  Failed:', e); process.exit(1) })
