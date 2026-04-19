@@ -3,7 +3,7 @@
  * PERSON 1 — Map + UI
  *
  * Toolbar toggle between drag/explore mode and bottle-drop mode.
- * Sits top-right so it does not cover the bottle list actions.
+ * Lives in the left sidebar above the bottle list actions.
  * Keyboard shortcut: D = drag, B = bottle.
  */
 
@@ -28,11 +28,7 @@ export function ModeToggle({ mode, onChange }: Props) {
   }, [onChange])
 
   return (
-<<<<<<< HEAD
-    <div className="absolute top-4 right-4 z-[1000] flex gap-1.5 bg-[#080f1f]/90 border border-white/10 rounded-xl p-1 backdrop-blur-sm">
-=======
-    <div className="pointer-events-auto self-start flex gap-1.5 bg-[#080f1f]/90 border border-white/10 rounded-xl p-1 backdrop-blur-sm">
->>>>>>> c4b3616ff5fb90b0b5a9e3477aeded4ee02281f8
+    <div className="pointer-events-auto flex w-fit gap-1.5 self-start bg-[#080f1f]/90 border border-white/10 rounded-xl p-1 backdrop-blur-sm">
       <ModeButton
         active={mode === 'drag'}
         onClick={() => onChange('drag')}
