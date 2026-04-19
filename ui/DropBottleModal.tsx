@@ -12,7 +12,7 @@ interface Props {
   onClose: () => void
   onBottleDropped: (bottle: Bottle) => void
 }
-
+///a
 export function DropBottleModal({ lat, lng, onClose, onBottleDropped }: Props) {
   const [message, setMessage] = useState('')
   const [authorName, setAuthorName] = useState('')
