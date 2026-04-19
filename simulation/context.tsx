@@ -19,6 +19,9 @@ interface SimulationContextValue {
   setSpeedMultiplier: (v: number) => void
   showFlowField: boolean
   setShowFlowField: (v: boolean) => void
+  daysElapsed: number
+  setDaysElapsed: (v: number) => void
+  simulationStartIso: string
 }
 
 const SimulationContext = createContext<SimulationContextValue | null>(null)
@@ -30,9 +33,21 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   const [running, setRunning] = useState(true)
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(10)
   const [showFlowField, setShowFlowField] = useState(true)
+  const [daysElapsed, setDaysElapsed] = useState(0)
+  const [simulationStartIso] = useState(() => new Date().toISOString())
 
   return (
-    <SimulationContext.Provider value={{ running, setRunning, speedMultiplier, setSpeedMultiplier, showFlowField, setShowFlowField }}>
+    <SimulationContext.Provider value={{
+      running,
+      setRunning,
+      speedMultiplier,
+      setSpeedMultiplier,
+      showFlowField,
+      setShowFlowField,
+      daysElapsed,
+      setDaysElapsed,
+      simulationStartIso,
+    }}>
       {children}
     </SimulationContext.Provider>
   )

@@ -16,17 +16,21 @@ import type { Bottle, FlowField, FlowFieldMeta } from '@/types'
 const TICK_INTERVAL_MS = 1000
 
 export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle[]) => void) {
-  const { running, speedMultiplier } = useSimulationContext()
+  const { running, speedMultiplier, daysElapsed, setDaysElapsed } = useSimulationContext()
   const fieldRef = useRef<{ field: FlowField; meta: FlowFieldMeta } | null>(null)
   const bottlesRef = useRef(bottles)
   const runningRef = useRef(running)
   const speedRef = useRef(speedMultiplier)
   const updateRef = useRef(updateBottles)
+  const daysElapsedRef = useRef(daysElapsed)
+  const setDaysElapsedRef = useRef(setDaysElapsed)
 
   bottlesRef.current = bottles
   runningRef.current = running
   speedRef.current = speedMultiplier
   updateRef.current = updateBottles
+  daysElapsedRef.current = daysElapsed
+  setDaysElapsedRef.current = setDaysElapsed
 
   useEffect(() => {
     loadFlowField().then((f) => { fieldRef.current = f })
@@ -53,6 +57,7 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
       }
 
       updateRef.current(current)
+      setDaysElapsedRef.current(daysElapsedRef.current + speedRef.current)
     }, TICK_INTERVAL_MS)
 
     return () => clearInterval(interval)

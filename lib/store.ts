@@ -7,11 +7,11 @@ import type { Bottle } from '@/types'
 
 const KEY = 'dab_bottles'
 
-export function loadBottles(): Bottle[] {
+export function loadBottles(): Bottle[] | null {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as Bottle[]) : []
+    return raw === null ? null : (JSON.parse(raw) as Bottle[])
   } catch {
     return []
   }
@@ -24,5 +24,5 @@ export function saveBottles(bottles: Bottle[]): void {
 
 export function clearBottles(): void {
   if (typeof window === 'undefined') return
-  localStorage.removeItem(KEY)
+  localStorage.setItem(KEY, JSON.stringify([]))
 }
