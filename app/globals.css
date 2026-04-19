@@ -64,3 +64,12 @@ input[type="date"].sim-date-input::-webkit-calendar-picker-indicator {
   padding: 0;
   margin-left: 2px;
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

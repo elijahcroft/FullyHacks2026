@@ -37,7 +37,7 @@ export function BottleList({ bottles, mapRef, onReset }: Props) {
       </button>
 
       {/* Bottle list */}
-      <div className="pointer-events-auto flex flex-col gap-1.5 overflow-y-auto flex-1 pr-0.5">
+      <div className="hide-scrollbar pointer-events-auto flex flex-col gap-1.5 overflow-y-auto flex-1 pr-0.5">
         {bottles.length === 0 && (
           <p className="text-white/20 text-xs px-1">No bottles yet — click the ocean.</p>
         )}
