@@ -1,21 +1,26 @@
 'use client'
 /**
  * PERSON 1 — Map + UI
+ * App shell. Composes all pieces — no simulation or canvas logic lives here.
  */
 
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { DropBottleModal } from './DropBottleModal'
 import { BottleCard } from './BottleCard'
+import { SimControls } from './SimControls'
 import { useBottles } from '@/hooks/useBottles'
+import { useSimulation } from '@/hooks/useSimulation'
 import type { Bottle } from '@/types'
 
 const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false })
 
 export function OceanMap() {
-  const { bottles, addBottle } = useBottles()
+  const { bottles, addBottle, updateBottles } = useBottles()
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
+
+  useSimulation(bottles, updateBottles)
 
   return (
     <div className="relative w-full h-full">
@@ -46,6 +51,8 @@ export function OceanMap() {
           {bottles.length} bottle{bottles.length !== 1 ? 's' : ''} adrift · click the ocean to drop one
         </div>
       </div>
+
+      <SimControls />
     </div>
   )
 }

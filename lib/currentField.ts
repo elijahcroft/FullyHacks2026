@@ -23,8 +23,8 @@ let cachedMeta: FlowFieldMeta | null = null
 export async function loadFlowField(): Promise<{ field: FlowField; meta: FlowFieldMeta }> {
   if (cachedField && cachedMeta) return { field: cachedField, meta: cachedMeta }
 
-  // TODO: swap this URL for a live API endpoint once data source is confirmed
   const res = await fetch('/data/currentField.json')
+  if (!res.ok) throw new Error(`Failed to load flow field: ${res.status} ${res.url}`)
   const data = await res.json()
 
   cachedField = data.field

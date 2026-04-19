@@ -2,39 +2,29 @@
 /**
  * PERSON 1 — Map + UI
  *
- * Modal shown when the user clicks the ocean to drop a bottle.
+ * Collects message + name, builds a Bottle object locally, calls onBottleDropped.
+ * No server calls — bottles are stored in localStorage by useBottles.
  */
 
 import { useState } from 'react'
-import { createBottle } from '@/lib/supabase'
 import type { Bottle } from '@/types'
 
 interface Props {
   lat: number
   lng: number
   onClose: () => void
-  onBottleDropped?: (bottle: Bottle) => void
+  onBottleDropped: (bottle: Bottle) => void
 }
 
 export function DropBottleModal({ lat, lng, onClose, onBottleDropped }: Props) {
   const [message, setMessage] = useState('')
   const [authorName, setAuthorName] = useState('')
-  const [submitting, setSubmitting] = useState(false)
 
-  const handleDrop = async () => {
+  const handleDrop = () => {
     if (!message.trim()) return
-    setSubmitting(true)
 
-    const saved = await createBottle({
-      message: message.trim(),
-      author_name: authorName.trim() || 'Anonymous',
-      start_lat: lat,
-      start_lng: lng,
-    })
-
-    // Optimistic local bottle if DB not connected
-    const bottle: Bottle = saved ?? {
-      id: `local-${Date.now()}`,
+    const bottle: Bottle = {
+      id: crypto.randomUUID(),
       message: message.trim(),
       author_name: authorName.trim() || 'Anonymous',
       start_lat: lat,
@@ -48,9 +38,7 @@ export function DropBottleModal({ lat, lng, onClose, onBottleDropped }: Props) {
       destination: null,
     }
 
-    onBottleDropped?.(bottle)
-    setSubmitting(false)
-    onClose()
+    onBottleDropped(bottle)
   }
 
   return (
@@ -58,7 +46,7 @@ export function DropBottleModal({ lat, lng, onClose, onBottleDropped }: Props) {
       <div className="bg-[#0d1b2e] border border-blue-900/60 rounded-2xl p-6 w-full max-w-md text-white shadow-2xl mx-4">
         <h2 className="text-lg font-semibold mb-1">Drop a bottle</h2>
         <p className="text-xs text-blue-500 mb-5">
-          {lat.toFixed(3)}°{lat >= 0 ? 'N' : 'S'}, {Math.abs(lng).toFixed(3)}°{lng >= 0 ? 'E' : 'W'}
+          {Math.abs(lat).toFixed(3)}°{lat >= 0 ? 'N' : 'S'}, {Math.abs(lng).toFixed(3)}°{lng >= 0 ? 'E' : 'W'}
         </p>
 
         <input
@@ -80,10 +68,10 @@ export function DropBottleModal({ lat, lng, onClose, onBottleDropped }: Props) {
         <div className="flex gap-3">
           <button
             onClick={handleDrop}
-            disabled={submitting || !message.trim()}
+            disabled={!message.trim()}
             className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg py-2 text-sm font-medium transition-colors"
           >
-            {submitting ? 'Dropping…' : '🫙 Drop bottle'}
+            🫙 Drop bottle
           </button>
           <button
             onClick={onClose}

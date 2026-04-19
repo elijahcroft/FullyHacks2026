@@ -87,7 +87,7 @@ for (let r = 0; r < meta.rows; r++) {
 }
 
 writeFileSync(
-  'data/currentField.json',
+  'public/data/currentField.json',
   JSON.stringify({ meta, field }, null, 0),
 )
-console.log('✓ Wrote data/currentField.json')
+console.log('✓ Wrote public/data/currentField.json')

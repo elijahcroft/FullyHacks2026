@@ -2,15 +2,43 @@
 /**
  * PERSON 4 — Canvas Rendering + Visual Effects
  *
- * Subscribes to real-time bottle updates via Supabase realtime.
- * Falls back to demo bottles when Supabase is not configured.
+ * All bottle state lives here. Backed by localStorage — no server needed.
+ * The simulation tick loop calls updateBottles() to move bottles forward.
  */
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState } from 'react'
+import { loadBottles, saveBottles } from '@/lib/store'
 import type { Bottle } from '@/types'
 
-// Shown when there's no database connection so the canvas isn't empty
+export function useBottles() {
+  const [bottles, setBottles] = useState<Bottle[]>(() => {
+    const saved = loadBottles()
+    return saved.length > 0 ? saved : DEMO_BOTTLES
+  })
+
+  const addBottle = (bottle: Bottle) => {
+    setBottles((prev) => {
+      const next = [bottle, ...prev]
+      saveBottles(next)
+      return next
+    })
+  }
+
+  // Called by useSimulation on every tick with updated positions
+  const updateBottles = (updated: Bottle[]) => {
+    setBottles((prev) => {
+      const map = new Map(updated.map((b) => [b.id, b]))
+      const next = prev.map((b) => map.get(b.id) ?? b)
+      saveBottles(next)
+      return next
+    })
+  }
+
+  return { bottles, addBottle, updateBottles }
+}
+
+// ---- Demo data (shown until the user drops their first bottle) -------------
+
 const DEMO_BOTTLES: Bottle[] = [
   {
     id: 'demo-1',
@@ -26,7 +54,7 @@ const DEMO_BOTTLES: Bottle[] = [
   },
   {
     id: 'demo-2',
-    message: 'Trapped forever... send help.',
+    message: 'Trapped forever in the gyre... send help.',
     author_name: 'Demo',
     start_lat: 50, start_lng: -180,
     current_lat: 35, current_lng: -145,
@@ -38,7 +66,7 @@ const DEMO_BOTTLES: Bottle[] = [
   },
   {
     id: 'demo-3',
-    message: 'Set adrift somewhere in the Atlantic.',
+    message: 'Drifting through the Atlantic...',
     author_name: 'Demo',
     start_lat: 20, start_lng: -50,
     current_lat: 25, current_lng: -40,
@@ -49,40 +77,3 @@ const DEMO_BOTTLES: Bottle[] = [
     destination: null,
   },
 ]
-
-export function useBottles() {
-  const [bottles, setBottles] = useState<Bottle[]>(supabase ? [] : DEMO_BOTTLES)
-  const [loading, setLoading] = useState(!!supabase)
-
-  useEffect(() => {
-    if (!supabase) return
-
-    supabase
-      .from('bottles')
-      .select('*')
-      .then(({ data }) => {
-        if (data) setBottles(data as Bottle[])
-        setLoading(false)
-      })
-
-    const channel = supabase
-      .channel('bottles-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bottles' }, (payload) => {
-        const updated = payload.new as Bottle
-        setBottles((prev) => {
-          const idx = prev.findIndex((b) => b.id === updated.id)
-          if (idx === -1) return [...prev, updated]
-          const next = [...prev]
-          next[idx] = updated
-          return next
-        })
-      })
-      .subscribe()
-
-    return () => { supabase!.removeChannel(channel) }
-  }, [])
-
-  const addBottle = (bottle: Bottle) => setBottles((prev) => [bottle, ...prev])
-
-  return { bottles, loading, addBottle }
-}

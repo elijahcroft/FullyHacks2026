@@ -1,7 +1,11 @@
 // PERSON 1 — Map + UI
-// Main page — mounts OceanMap full-screen.
 import { OceanMap } from '@/components/OceanMap'
+import { SimulationProvider } from '@/context/SimulationContext'
 
 export default function Home() {
-  return <OceanMap />
+  return (
+    <SimulationProvider>
+      <OceanMap />
+    </SimulationProvider>
+  )
 }
