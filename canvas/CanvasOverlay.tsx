@@ -25,6 +25,9 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
   const rafRef = useRef<number>(0)
   const bottlesRef = useRef(bottles)
   bottlesRef.current = bottles
+  const selectedBottleRef = useRef(selectedBottle)
+  selectedBottleRef.current = selectedBottle
+  const renderPos = useRef<Map<string, { lat: number; lng: number }>>(new Map())
 
   // Mount canvas
   useEffect(() => {
@@ -61,7 +64,11 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
           rp.lng += (bottle.current_lng - rp.lng) * LERP
         }
 
-        drawTrail(ctx, bottle, map)
+        const wrappedLng = ((rp.lng + 180) % 360 + 360) % 360 - 180
+        const pt = map.latLngToContainerPoint([rp.lat, wrappedLng])
+        const isSelected = selectedBottleRef.current?.id === bottle.id
+
+        drawTrail(ctx, bottle, map, rp)
         if (bottle.status === 'garbage_patch') drawPulseRing(ctx, pt.x, pt.y, ts)
         if (isSelected) drawSelectionRing(ctx, pt.x, pt.y, ts)
         drawGlow(ctx, pt.x, pt.y, bottle.status, isSelected)
@@ -113,9 +120,7 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
 
 // ---- Drawing helpers -------------------------------------------------------
 
-type LeafletMap = ReturnType<typeof useMap>
-
-function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap) {
+function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap, rp: { lat: number; lng: number }) {
   if (bottle.path.length < 2) return
 
   const slice = bottle.path

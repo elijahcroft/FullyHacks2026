@@ -7,18 +7,7 @@
  */
 
 import { useState, useEffect } from 'react'
-<<<<<<< HEAD
 import { loadBottles, saveBottles, clearBottles } from '@/lib/store'
-import type { Bottle } from '@/types'
-
-export function useBottles() {
-  const [bottles, setBottles] = useState<Bottle[]>(DEMO_BOTTLES)
-
-  useEffect(() => {
-    const saved = loadBottles()
-    if (saved.length > 0) setBottles(saved)
-=======
-import { loadBottles, saveBottles } from '@/lib/store'
 import type { Bottle } from '@/types'
 
 export function useBottles() {
@@ -29,7 +18,6 @@ export function useBottles() {
   useEffect(() => {
     const saved = loadBottles()
     setBottles(saved.length > 0 ? saved : DEMO_BOTTLES)
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
   }, [])
 
   const addBottle = (bottle: Bottle) => {

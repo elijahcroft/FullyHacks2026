@@ -94,14 +94,15 @@ function MapReadyHandler({ onMapReady }: { onMapReady?: (map: L.Map) => void }) 
   return null
 }
 
-function MapLayers({ bottles, onMapClick, onBottleClick, onMapReady }: Props) {
+function MapLayers({ bottles, selectedBottle, mode, onMapClick, onBottleClick, onMapReady }: Props) {
   const { showFlowField } = useSimulationContext()
   return (
     <>
       <TileLayer url={DARK_TILE} attribution='&copy; CartoDB' />
       <TileLayer url={LABEL_TILE} pane="shadowPane" />
       <MapReadyHandler onMapReady={onMapReady} />
-      <MapClickHandler onMapClick={onMapClick} />
+      <MapClickHandler mode={mode} onMapClick={onMapClick} />
+      <CursorController mode={mode} />
       <GarbagePatchOverlay />
       {showFlowField && <FlowOverlay />}
       <CanvasOverlay bottles={bottles} selectedBottle={selectedBottle} onBottleClick={onBottleClick} />
@@ -110,7 +111,7 @@ function MapLayers({ bottles, onMapClick, onBottleClick, onMapReady }: Props) {
   )
 }
 
-export default function LeafletMap({ bottles, onMapClick, onBottleClick, onMapReady }: Props) {
+export default function LeafletMap({ bottles, selectedBottle, mode, onMapClick, onBottleClick, onMapReady }: Props) {
   return (
     <MapContainer
       center={[20, -150]}
@@ -121,7 +122,7 @@ export default function LeafletMap({ bottles, onMapClick, onBottleClick, onMapRe
       zoomControl={false}
       worldCopyJump
     >
-      <MapLayers bottles={bottles} onMapClick={onMapClick} onBottleClick={onBottleClick} onMapReady={onMapReady} />
+      <MapLayers bottles={bottles} selectedBottle={selectedBottle} mode={mode} onMapClick={onMapClick} onBottleClick={onBottleClick} onMapReady={onMapReady} />
     </MapContainer>
   )
 }
