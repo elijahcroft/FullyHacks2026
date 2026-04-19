@@ -4,7 +4,7 @@
  */
 
 import { MapContainer, TileLayer, useMapEvents, useMap } from 'react-leaflet'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { CanvasOverlay } from '@/canvas/CanvasOverlay'
 import { FlowOverlay } from '@/canvas/FlowOverlay'
 import { useSimulationContext } from '@/simulation/context'
@@ -42,8 +42,16 @@ function GarbagePatchOverlay() {
 
 function ZoomControls() {
   const map = useMap()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Prevent clicks on the zoom buttons from propagating to the Leaflet map
+  // (which would trigger the drop-bottle click handler)
+  useEffect(() => {
+    if (containerRef.current) L.DomEvent.disableClickPropagation(containerRef.current)
+  }, [])
+
   return (
-    <div className="absolute bottom-5 left-4 z-[1000] flex flex-col gap-1.5">
+    <div ref={containerRef} className="absolute bottom-5 left-4 z-[1000] flex flex-col gap-1.5">
       <button
         onClick={() => map.zoomIn()}
         className="w-9 h-9 bg-[#080f1f]/90 border border-white/10 rounded-xl text-white/50 hover:text-white hover:border-white/30 transition-all backdrop-blur-sm flex items-center justify-center text-lg leading-none select-none"

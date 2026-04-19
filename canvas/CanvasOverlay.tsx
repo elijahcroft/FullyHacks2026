@@ -71,8 +71,11 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
           rp.lng += (bottle.current_lng - rp.lng) * LERP
         }
 
-        const pt = map.latLngToContainerPoint([rp.lat, rp.lng])
-        if (pt.x < -30 || pt.x > canvas.width + 30 || pt.y < -30 || pt.y > canvas.height + 30) continue
+        // Wrap longitude into [-180, 180] so bottles don't vanish at the antimeridian
+        const wrappedLng = ((rp.lng + 180) % 360 + 360) % 360 - 180
+        const pt = map.latLngToContainerPoint([rp.lat, wrappedLng])
+        // Generous buffer so bottles near the edge don't pop in/out
+        if (pt.x < -120 || pt.x > canvas.width + 120 || pt.y < -120 || pt.y > canvas.height + 120) continue
 
         const isSelected = selectedRef.current?.id === bottle.id
 
@@ -108,7 +111,9 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
       const my = e.clientY - rect.top
       for (const bottle of bottlesRef.current) {
         const rp = renderPos.current.get(bottle.id)
-        const pt = map.latLngToContainerPoint([rp?.lat ?? bottle.current_lat, rp?.lng ?? bottle.current_lng])
+        const rawLng = rp?.lng ?? bottle.current_lng
+        const wrappedLng = ((rawLng + 180) % 360 + 360) % 360 - 180
+        const pt = map.latLngToContainerPoint([rp?.lat ?? bottle.current_lat, wrappedLng])
         if (Math.hypot(mx - pt.x, my - pt.y) < 16) {
           onBottleClick(bottle)
           e.stopPropagation()
