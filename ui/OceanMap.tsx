@@ -4,19 +4,20 @@
  */
 
 import dynamic from 'next/dynamic'
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { DropBottleModal } from './DropBottleModal'
-import { BottleCard } from './BottleCard'
 import { BottleList } from './BottleList'
 import { SimControls } from './SimControls'
 import { ModeToggle } from './ModeToggle'
-import { EnvironmentalImpactPanel } from './EnvironmentalImpactPanel'
+import { InterceptionPanel } from './InterceptionPanel'
 import { GeminiChatWidget } from './GeminiChatWidget'
 import { HazardOverlayControls } from './HazardOverlayControls'
 import { useBottles } from '@/canvas/useBottles'
 import { useSimulation } from '@/simulation/useSimulation'
+import { useSimulationContext } from '@/simulation/context'
 import type { Bottle, MapController } from '@/types'
 import type { OverlayType } from '@/lib/marineZones'
+import type { IncidentInterception } from '@/lib/interception'
 
 export type InteractionMode = 'drag' | 'bottle'
 
@@ -28,6 +29,7 @@ export function OceanMap() {
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
   const [activeOverlays, setActiveOverlays] = useState<Set<OverlayType>>(new Set())
+  const [interceptionData, setInterceptionData] = useState<IncidentInterception | null>(null)
   const mapRef = useRef<MapController | null>(null)
 
   function toggleOverlay(type: OverlayType) {
@@ -45,7 +47,17 @@ export function OceanMap() {
     }
   }
 
+  function handleBottleClick(bottle: Bottle) {
+    setSelectedBottle(bottle)
+    mapRef.current?.flyTo(bottle.current_lat, bottle.current_lng, 5)
+  }
+
+  const handleInterceptionComputed = useCallback((data: IncidentInterception | null) => {
+    setInterceptionData(data)
+  }, [])
+
   useSimulation(bottles, updateBottles)
+  const { simDate } = useSimulationContext()
 
   const hudHint =
     mode === 'bottle' ? 'click the ocean to report' :
@@ -58,8 +70,9 @@ export function OceanMap() {
         selectedBottle={selectedBottle}
         mode={mode}
         activeOverlays={activeOverlays}
+        interception={interceptionData}
         onMapClick={handleMapClick}
-        onBottleClick={setSelectedBottle}
+        onBottleClick={handleBottleClick}
         onMapReady={(map) => { mapRef.current = map }}
       />
 
@@ -82,16 +95,13 @@ export function OceanMap() {
         />
       )}
 
-      {selectedBottle && (
-        <BottleCard bottle={selectedBottle} onClose={() => setSelectedBottle(null)} />
-      )}
-
-
-      <EnvironmentalImpactPanel
+      {/* Right panel — interception analysis */}
+      <InterceptionPanel
         bottle={selectedBottle}
-        onClose={() => setSelectedBottle(null)}
+        simDate={simDate ?? new Date()}
+        onClose={() => { setSelectedBottle(null); setInterceptionData(null) }}
+        onInterceptionComputed={handleInterceptionComputed}
       />
-
 
       {/* HUD — top center */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">

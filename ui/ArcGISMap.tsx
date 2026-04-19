@@ -18,12 +18,14 @@ import type { InteractionMode } from './OceanMap'
 import { useSimulationContext } from '@/simulation/context'
 import { buildFlowRenderer, createDrifterCurrentsLayer, flowSpeedForMultiplier } from '@/lib/arcgis/drifterCurrents'
 import { MARINE_ZONES, type OverlayType } from '@/lib/marineZones'
+import type { IncidentInterception } from '@/lib/interception'
 
 interface Props {
   bottles: Bottle[]
   selectedBottle: Bottle | null
   mode: InteractionMode
   activeOverlays: Set<OverlayType>
+  interception: IncidentInterception | null
   onMapClick: (lat: number, lng: number) => void
   onBottleClick: (bottle: Bottle) => void
   onMapReady?: (map: MapController) => void
@@ -34,6 +36,7 @@ interface LayerBundle {
   plumeLayer: GraphicsLayer
   trailLayer: GraphicsLayer
   annotationLayer: GraphicsLayer
+  interceptionLayer: GraphicsLayer
   currentsLayer: ImageryTileLayer
 }
 
@@ -66,6 +69,7 @@ export default function ArcGISMap({
   selectedBottle,
   mode,
   activeOverlays,
+  interception,
   onMapClick,
   onBottleClick,
   onMapReady,
@@ -135,15 +139,16 @@ export default function ArcGISMap({
   useEffect(() => {
     if (!containerRef.current) return
 
-    const currentsLayer = createDrifterCurrentsLayer(speedMultiplier)
-    const plumeLayer    = new GraphicsLayer({ title: 'Spill Plume', blendMode: 'screen' })
-    const trailLayer    = new GraphicsLayer({ title: 'Incident Trails' })
-    const bottleLayer   = new GraphicsLayer({ title: 'Incident Markers' })
-    const annotationLayer = new GraphicsLayer({ title: 'Ocean Risk Zones' })
+    const currentsLayer     = createDrifterCurrentsLayer(speedMultiplier)
+    const plumeLayer        = new GraphicsLayer({ title: 'Spill Plume', blendMode: 'screen' })
+    const trailLayer        = new GraphicsLayer({ title: 'Incident Trails' })
+    const bottleLayer       = new GraphicsLayer({ title: 'Incident Markers' })
+    const annotationLayer   = new GraphicsLayer({ title: 'Ocean Risk Zones' })
+    const interceptionLayer = new GraphicsLayer({ title: 'Interception Overlay' })
 
     const map = new EsriMap({
       basemap: createPublicOceanBasemap(),
-      layers: [currentsLayer, plumeLayer, trailLayer, bottleLayer, annotationLayer],
+      layers: [currentsLayer, plumeLayer, trailLayer, bottleLayer, annotationLayer, interceptionLayer],
     })
 
     const view = new MapView({
@@ -155,7 +160,7 @@ export default function ArcGISMap({
     })
 
     view.ui.move('zoom', 'bottom-left')
-    layersRef.current = { bottleLayer, plumeLayer, trailLayer, annotationLayer, currentsLayer }
+    layersRef.current = { bottleLayer, plumeLayer, trailLayer, annotationLayer, interceptionLayer, currentsLayer }
     viewRef.current = view
 
     onMapReadyRef.current?.({
@@ -288,6 +293,97 @@ export default function ArcGISMap({
     cancelLerp()
     startLerp()
   }, [bottles, selectedBottle]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Interception overlay ───────────────────────────────────────────────────
+
+  const pulseRafRef = useRef<number | null>(null)
+  const interceptDotRef = useRef<Graphic | null>(null)
+  const interceptHaloRef = useRef<Graphic | null>(null)
+
+  useEffect(() => {
+    const layer = layersRef.current?.interceptionLayer
+    if (!layer) return
+
+    // Cancel previous pulse animation
+    if (pulseRafRef.current !== null) { cancelAnimationFrame(pulseRafRef.current); pulseRafRef.current = null }
+    layer.removeAll()
+    interceptDotRef.current = null
+    interceptHaloRef.current = null
+
+    if (!interception || !selectedBottle) return
+
+    const cfg = INCIDENT_CONFIGS[selectedBottle.incidentType ?? 'plastic']
+    const [r, g, b] = cfg.color
+    const normPath = (pts: [number,number][]) => pts.map(([lat, lng]) => [normalizeLongitude(lng), lat] as [number,number])
+
+    // 1. Future drift path — dashed
+    if (interception.futurePath.length >= 2) {
+      layer.add(new Graphic({
+        geometry: new Polyline({ paths: [normPath(interception.futurePath)], spatialReference: { wkid: 4326 } }),
+        symbol: { type: 'simple-line', color: [r, g, b, 0.45], width: 1.8, style: 'dash', cap: 'round', join: 'round' },
+      }))
+    }
+
+    // 2. Vessel route — thin white dashed
+    if (interception.vesselPath.length >= 2) {
+      layer.add(new Graphic({
+        geometry: new Polyline({ paths: [normPath(interception.vesselPath)], spatialReference: { wkid: 4326 } }),
+        symbol: { type: 'simple-line', color: [255, 255, 255, 0.28], width: 1.2, style: 'short-dash', cap: 'round', join: 'round' },
+      }))
+    }
+
+    // 3. Response base marker
+    layer.add(new Graphic({
+      geometry: new Point({ longitude: normalizeLongitude(interception.base.lng), latitude: interception.base.lat, spatialReference: { wkid: 4326 } }),
+      symbol: { type: 'simple-marker', style: 'square', size: 8, color: [255,255,255,0.7], outline: { color: [255,255,255,0.3], width: 1 } },
+    }))
+
+    // 4. Interception point — pulsing target rings
+    const [iLat, iLng] = interception.point
+    const iGeo = new Point({ longitude: normalizeLongitude(iLng), latitude: iLat, spatialReference: { wkid: 4326 } })
+
+    // Outer halo (will pulse)
+    const halo = new Graphic({
+      geometry: iGeo,
+      symbol: { type: 'simple-marker', style: 'circle', size: 36, color: [r, g, b, 0.0], outline: { color: [r, g, b, 0.6], width: 2 } },
+    })
+    // Inner dot
+    const dot = new Graphic({
+      geometry: iGeo,
+      symbol: { type: 'simple-marker', style: 'circle', size: 14, color: [r, g, b, 0.95], outline: { color: [255,255,255,0.9], width: 2.5 } },
+    })
+    // Crosshair rings
+    const ring = new Graphic({
+      geometry: iGeo,
+      symbol: { type: 'simple-marker', style: 'circle', size: 24, color: [0,0,0,0], outline: { color: [r, g, b, 0.5], width: 1.5 } },
+    })
+
+    layer.addMany([halo, ring, dot])
+    interceptHaloRef.current = halo
+    interceptDotRef.current = dot
+
+    // Pulse animation: breathe the halo size
+    const pulseStart = performance.now()
+    const pulseTick = (now: number) => {
+      const t = ((now - pulseStart) / 1800) % 1  // 1.8s cycle
+      const ease = Math.sin(t * Math.PI)           // 0→1→0
+      if (interceptHaloRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        interceptHaloRef.current.symbol = {
+          type: 'simple-marker', style: 'circle',
+          size: 36 + ease * 18,
+          color: [r, g, b, 0],
+          outline: { color: [r, g, b, 0.7 - ease * 0.5], width: 2 - ease * 0.5 },
+        } as any
+      }
+      pulseRafRef.current = requestAnimationFrame(pulseTick)
+    }
+    pulseRafRef.current = requestAnimationFrame(pulseTick)
+
+    return () => {
+      if (pulseRafRef.current !== null) { cancelAnimationFrame(pulseRafRef.current); pulseRafRef.current = null }
+    }
+  }, [interception, selectedBottle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className="w-full h-full arcgis-map-shell" />
 }
