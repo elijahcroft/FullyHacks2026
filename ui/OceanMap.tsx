@@ -20,12 +20,8 @@ export type InteractionMode = 'drag' | 'bottle'
 const LeafletMap = dynamic(() => import('@/ui/LeafletMap'), { ssr: false })
 
 export function OceanMap() {
-<<<<<<< HEAD
-  const { bottles, addBottle, updateBottles, resetBottles } = useBottles()
-=======
   const { bottles, addBottle, updateBottles } = useBottles()
   const [mode, setMode] = useState<InteractionMode>('drag')
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
   const mapRef = useRef<LeafletMapInstance | null>(null)
@@ -45,7 +41,7 @@ export function OceanMap() {
         onBottleClick={setSelectedBottle}
         onMapReady={(map) => { mapRef.current = map }}
       />
-      <BottleList bottles={bottles} mapRef={mapRef} onReset={resetBottles} />
+      <BottleList bottles={bottles} mapRef={mapRef} onReset={useBottles} />
 
       {dropTarget && (
         <DropBottleModal
