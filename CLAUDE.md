@@ -1,1 +1,6 @@
 @AGENTS.md
+DropABottle
+What happens to a bottle when it meets the ocean? DropABottle lets you find out.
+Drop any number of virtual bottles anywhere on the ocean's surface and watch them travel — carried by real tidal patterns, ocean currents, and weather systems — across days, weeks, and months. Every bottle's journey is computed day by day, snapshotting its position at each interval using real oceanographic data, so the simulation stays physically grounded no matter how far the bottles drift.
+Time is yours to control. Watch bottles inch forward in real time, or compress days into seconds with time acceleration to see where the ocean takes them across entire seasons. Each bottle traces a visible path as it moves, letting you compare how bottles dropped at different coordinates diverge, converge, or spiral into gyres across the globe.
+DropABottle transforms one of humanity's oldest ocean mysteries — where does it all end up? — into something you can actually see, explore, and feel. It's a simulation, a visualization, and a quiet lesson in just how connected every corner of the ocean really is.
