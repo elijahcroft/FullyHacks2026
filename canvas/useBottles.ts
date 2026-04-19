@@ -6,15 +6,17 @@
  * The simulation tick loop calls updateBottles() to move bottles forward.
  */
 
-import { useState } from 'react'
-import { loadBottles, saveBottles } from '@/lib/store'
+import { useState, useEffect } from 'react'
+import { loadBottles, saveBottles, clearBottles } from '@/lib/store'
 import type { Bottle } from '@/types'
 
 export function useBottles() {
-  const [bottles, setBottles] = useState<Bottle[]>(() => {
+  const [bottles, setBottles] = useState<Bottle[]>(DEMO_BOTTLES)
+
+  useEffect(() => {
     const saved = loadBottles()
-    return saved.length > 0 ? saved : DEMO_BOTTLES
-  })
+    if (saved.length > 0) setBottles(saved)
+  }, [])
 
   const addBottle = (bottle: Bottle) => {
     setBottles((prev) => {
@@ -34,7 +36,12 @@ export function useBottles() {
     })
   }
 
-  return { bottles, addBottle, updateBottles }
+  const resetBottles = () => {
+    clearBottles()
+    setBottles(DEMO_BOTTLES)
+  }
+
+  return { bottles, addBottle, updateBottles, resetBottles }
 }
 
 // ---- Demo data (shown until the user drops their first bottle) -------------

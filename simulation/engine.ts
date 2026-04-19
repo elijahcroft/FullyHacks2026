@@ -11,6 +11,7 @@
  */
 
 import { sampleFlowField } from './flowField'
+import { isOnLand } from '@/lib/landPolygons'
 import type { Bottle, BottleStatus, FlowField, FlowFieldMeta, TickOptions } from '@/types'
 
 // Great Pacific Garbage Patch bounding box
@@ -98,7 +99,7 @@ function detectStatus(lat: number, lng: number): BottleStatus {
   ) {
     return 'garbage_patch'
   }
-  // TODO (Person 2): add coastline collision check here using data/coastlines.geojson
+  if (isOnLand(lat, lng)) return 'ashore'
   return 'drifting'
 }
 

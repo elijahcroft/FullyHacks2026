@@ -5,9 +5,11 @@
  */
 
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import type { Map as LeafletMapInstance } from 'leaflet'
 import { DropBottleModal } from './DropBottleModal'
 import { BottleCard } from './BottleCard'
+import { BottleList } from './BottleList'
 import { SimControls } from './SimControls'
 import { useBottles } from '@/canvas/useBottles'
 import { useSimulation } from '@/simulation/useSimulation'
@@ -16,9 +18,10 @@ import type { Bottle } from '@/types'
 const LeafletMap = dynamic(() => import('@/ui/LeafletMap'), { ssr: false })
 
 export function OceanMap() {
-  const { bottles, addBottle, updateBottles } = useBottles()
+  const { bottles, addBottle, updateBottles, resetBottles } = useBottles()
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
+  const mapRef = useRef<LeafletMapInstance | null>(null)
 
   useSimulation(bottles, updateBottles)
 
@@ -28,7 +31,9 @@ export function OceanMap() {
         bottles={bottles}
         onMapClick={(lat, lng) => setDropTarget({ lat, lng })}
         onBottleClick={setSelectedBottle}
+        onMapReady={(map) => { mapRef.current = map }}
       />
+      <BottleList bottles={bottles} mapRef={mapRef} onReset={resetBottles} />
 
       {dropTarget && (
         <DropBottleModal

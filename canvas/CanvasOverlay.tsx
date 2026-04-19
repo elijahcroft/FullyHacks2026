@@ -14,7 +14,6 @@
 
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
-import { useSimulationContext } from '@/simulation/context'
 import type { Bottle } from '@/types'
 
 interface Props {
@@ -24,13 +23,10 @@ interface Props {
 
 export function CanvasOverlay({ bottles, onBottleClick }: Props) {
   const map = useMap()
-  const { speedMultiplier } = useSimulationContext()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
   const bottlesRef = useRef(bottles)
-  const speedRef = useRef(speedMultiplier)
   bottlesRef.current = bottles
-  speedRef.current = speedMultiplier
 
   // Mount canvas over the map container
   useEffect(() => {
@@ -67,7 +63,7 @@ export function CanvasOverlay({ bottles, onBottleClick }: Props) {
         const pt = map.latLngToContainerPoint([bottle.current_lat, bottle.current_lng])
         if (pt.x < -30 || pt.x > canvas.width + 30 || pt.y < -30 || pt.y > canvas.height + 30) continue
 
-        drawTrail(ctx, bottle, map, speedRef.current)
+        drawTrail(ctx, bottle, map)
         if (bottle.status === 'garbage_patch') drawPulseRing(ctx, pt.x, pt.y, ts)
         drawGlow(ctx, pt.x, pt.y, bottle.status)
       }
@@ -109,12 +105,10 @@ export function CanvasOverlay({ bottles, onBottleClick }: Props) {
 
 type LeafletMap = ReturnType<typeof useMap>
 
-function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap, speed: number) {
+function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap) {
   if (bottle.path.length < 2) return
 
-  // Show more trail waypoints at higher speeds
-  const maxWaypoints = Math.min(bottle.path.length, 6 + Math.floor(Math.log10(speed) * 4))
-  const slice = bottle.path.slice(-maxWaypoints)
+  const slice = bottle.path
 
   const color = bottle.status === 'garbage_patch' ? '255,120,40' : '80,160,255'
 

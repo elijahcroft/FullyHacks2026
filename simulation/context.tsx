@@ -23,7 +23,7 @@ interface SimulationContextValue {
 
 const SimulationContext = createContext<SimulationContextValue | null>(null)
 
-export const SPEED_OPTIONS = [1, 10, 100, 1000] as const
+export const SPEED_OPTIONS = [1, 10, 100] as const
 export type SpeedOption = typeof SPEED_OPTIONS[number]
 
 export function SimulationProvider({ children }: { children: ReactNode }) {
