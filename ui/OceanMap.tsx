@@ -40,7 +40,12 @@ export function OceanMap() {
         onBottleClick={setSelectedBottle}
         onMapReady={(map) => { mapRef.current = map }}
       />
-      <BottleList bottles={bottles} mapRef={mapRef} onReset={resetBottles} />
+      <div className="absolute left-3 top-3 bottom-3 z-[1000] w-56 flex flex-col gap-2 pointer-events-none">
+        <div className="pointer-events-auto">
+          <ModeToggle mode={mode} onChange={setMode} />
+        </div>
+        <BottleList bottles={bottles} mapRef={mapRef} onReset={resetBottles} />
+      </div>
 
       {dropTarget && (
         <DropBottleModal
@@ -59,9 +64,6 @@ export function OceanMap() {
       {selectedBottle && (
         <BottleCard bottle={selectedBottle} onClose={() => setSelectedBottle(null)} />
       )}
-
-      {/* Mode toggle — top left */}
-      <ModeToggle mode={mode} onChange={setMode} />
 
       {/* HUD — top center */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">

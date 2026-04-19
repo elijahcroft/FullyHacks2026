@@ -27,7 +27,7 @@ export function ModeToggle({ mode, onChange }: Props) {
   }, [onChange])
 
   return (
-    <div className="absolute top-4 left-4 z-[1000] flex gap-1.5 bg-[#080f1f]/90 border border-white/10 rounded-xl p-1 backdrop-blur-sm">
+    <div className="inline-flex self-start gap-1.5 bg-[#080f1f]/90 border border-white/10 rounded-xl p-1 backdrop-blur-sm">
       <ModeButton
         active={mode === 'drag'}
         onClick={() => onChange('drag')}
@@ -70,7 +70,7 @@ function ModeButton({
     >
       {children}
       {/* Keyboard shortcut badge */}
-      <span className={`absolute -bottom-0.5 -right-0.5 text-[8px] font-mono leading-none px-0.5 rounded ${
+      <span className={`absolute bottom-0 right-0 text-[8px] font-mono leading-none px-0.5 rounded ${
         active ? 'text-blue-300' : 'text-white/20'
       }`}>
         {shortcut}
