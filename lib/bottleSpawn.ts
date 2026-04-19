@@ -1,5 +1,5 @@
 import { normalizeLongitude } from '@/lib/longitude'
-import type { Bottle } from '@/types'
+import type { Bottle, IncidentType } from '@/types'
 
 interface CreateBottleBatchOptions {
   lat: number
@@ -8,6 +8,7 @@ interface CreateBottleBatchOptions {
   radiusKm: number
   message: string
   authorName: string
+  incidentType: IncidentType
 }
 
 const KM_PER_LAT_DEGREE = 111
@@ -19,6 +20,7 @@ export function createBottleBatch({
   radiusKm,
   message,
   authorName,
+  incidentType,
 }: CreateBottleBatchOptions): Bottle[] {
   const safeCount = clampNumber(count, { min: 1, max: 100, fallback: 1, round: 'floor' })
   const safeRadiusKm = clampNumber(radiusKm, { min: 0, max: 500, fallback: 0 })
@@ -33,6 +35,7 @@ export function createBottleBatch({
       id: crypto.randomUUID(),
       message: trimmedMessage,
       author_name: trimmedAuthorName,
+      incidentType,
       start_lat: spawnLat,
       start_lng: spawnLng,
       current_lat: spawnLat,

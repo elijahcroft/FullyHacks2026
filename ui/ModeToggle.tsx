@@ -40,10 +40,10 @@ export function ModeToggle({ mode, onChange }: Props) {
       <ModeButton
         active={mode === 'bottle'}
         onClick={() => onChange('bottle')}
-        title="Click to drop a bottle (B)"
+        title="Click to report an incident (B)"
         shortcut="B"
       >
-        <BottleIcon />
+        <SpillIcon />
       </ModeButton>
 
     </div>

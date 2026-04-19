@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { Bottle } from '@/types'
+import { INCIDENT_CONFIGS } from '@/types'
 import { getZonesAtPosition, type MarineZone } from '@/lib/marineZones'
 import { analyzeBottleImpact } from '@/lib/gemini'
 
@@ -91,10 +92,12 @@ export function EnvironmentalImpactPanel({ bottle, onClose }: Props) {
 
             {/* Bottle info */}
             <div className="bg-white/3 border border-white/5 rounded-xl p-3.5">
-              <p className="text-xs font-medium text-white/80 mb-0.5">{bottle.author_name || 'Anonymous'}</p>
-              {bottle.message && (
-                <p className="text-xs text-white/40 italic mb-2 leading-relaxed line-clamp-2">"{bottle.message}"</p>
-              )}
+              {(() => {
+                const cfg = INCIDENT_CONFIGS[bottle.incidentType ?? 'plastic']
+                return (
+                  <p className="text-xs font-medium text-white/80 mb-0.5">{cfg.emoji} {cfg.label}</p>
+                )
+              })()}
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div className="bg-[#060d1a] rounded-lg p-2">
                   <p className="text-[10px] text-white/25 uppercase tracking-widest mb-0.5">Current</p>

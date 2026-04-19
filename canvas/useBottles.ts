@@ -61,8 +61,9 @@ export function useBottles() {
 const DEMO_BOTTLES: Bottle[] = [
   {
     id: 'demo-1',
-    message: 'Hello from the North Pacific! 🌊',
-    author_name: 'Demo',
+    message: 'High toxicity — large response needed',
+    author_name: 'Oil Spill',
+    incidentType: 'oil_spill',
     start_lat: 40, start_lng: -170,
     current_lat: 38, current_lng: -155,
     path: [[40, -170], [39.5, -165], [39, -160], [38.5, -157], [38, -155]],
@@ -73,8 +74,9 @@ const DEMO_BOTTLES: Bottle[] = [
   },
   {
     id: 'demo-2',
-    message: 'Trapped forever in the gyre... send help.',
-    author_name: 'Demo',
+    message: 'Broad area, slower urgency',
+    author_name: 'Plastic / Debris',
+    incidentType: 'plastic',
     start_lat: 50, start_lng: -180,
     current_lat: 35, current_lng: -145,
     path: [[50, -180], [45, -170], [40, -160], [37, -150], [35, -145]],
@@ -85,8 +87,9 @@ const DEMO_BOTTLES: Bottle[] = [
   },
   {
     id: 'demo-3',
-    message: 'Drifting through the Atlantic...',
-    author_name: 'Demo',
+    message: 'Rapid response, localized hazard',
+    author_name: 'Chemical Discharge',
+    incidentType: 'chemical',
     start_lat: 20, start_lng: -50,
     current_lat: 25, current_lng: -40,
     path: [[20, -50], [22, -46], [24, -43], [25, -40]],

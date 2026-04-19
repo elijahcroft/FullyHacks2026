@@ -48,7 +48,7 @@ export function OceanMap() {
   useSimulation(bottles, updateBottles)
 
   const hudHint =
-    mode === 'bottle' ? 'click the ocean to drop' :
+    mode === 'bottle' ? 'click the ocean to report' :
     'drag to explore'
 
   return (
@@ -96,7 +96,7 @@ export function OceanMap() {
       {/* HUD — top center */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">
         <div className="bg-[#080f1f]/80 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/40 backdrop-blur-sm tracking-wide">
-          {bottles.length} bottle{bottles.length !== 1 ? 's' : ''} adrift
+          {bottles.length} incident{bottles.length !== 1 ? 's' : ''} tracked
           <span className="mx-2 text-white/15">·</span>
           {hudHint}
         </div>

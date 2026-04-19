@@ -14,6 +14,7 @@ import { sampleFlowField } from './flowField'
 import { isOnLand } from '@/lib/landPolygons'
 import { normalizeLongitude } from '@/lib/longitude'
 import type { Bottle, BottleStatus, FlowField, FlowFieldMeta, TickOptions } from '@/types'
+import { INCIDENT_CONFIGS } from '@/types'
 
 // Great Pacific Garbage Patch bounding box
 const GARBAGE_PATCH = { latMin: 25, latMax: 45, lngMin: -155, lngMax: -135 }
@@ -53,10 +54,14 @@ export function tickBottle(
   // Sample current at current position
   const current = sampleFlowField(field, meta, bottle.current_lat, currentLng)
 
+  const incidentCfg = INCIDENT_CONFIGS[bottle.incidentType ?? 'plastic']
+  const driftScale = incidentCfg.driftScale
+  const turbScale = incidentCfg.turbulenceScale
+
   // Scale current from m/s → degrees/day  (86400 s/day * DEG_PER_METER)
-  const scale = 86_400 * DEG_PER_METER * dt
-  const turbU = (Math.random() - 0.5) * opts.turbulence
-  const turbV = (Math.random() - 0.5) * opts.turbulence
+  const scale = 86_400 * DEG_PER_METER * dt * driftScale
+  const turbU = (Math.random() - 0.5) * opts.turbulence * turbScale
+  const turbV = (Math.random() - 0.5) * opts.turbulence * turbScale
 
   const newLat = bottle.current_lat + (current.v + turbV) * scale
   const newLng = normalizeLongitude(currentLng + (current.u + turbU) * scale)
