@@ -9,8 +9,8 @@ import type { Bottle } from '@/types'
 const TICK_INTERVAL_MS = 1000
 
 export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle[]) => void) {
-  const { running, speedMultiplier, startDate, setSimDate } = useSimulationContext()
-
+  const { running, speedMultiplier, daysElapsed, setDaysElapsed } = useSimulationContext()
+  const fieldRef = useRef<{ field: FlowField; meta: FlowFieldMeta } | null>(null)
   const bottlesRef = useRef(bottles)
   const runningRef = useRef(running)
   const speedRef = useRef(speedMultiplier)
@@ -63,6 +63,7 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
       }
 
       updateRef.current(current)
+      setDaysElapsedRef.current(daysElapsedRef.current + speedRef.current)
     }, TICK_INTERVAL_MS)
 
     return () => clearInterval(interval)

@@ -127,8 +127,8 @@ export function FlowOverlay() {
           const b = Math.round(200 + s * 55)
 
           // Bucket by quantised speed+alpha so we can batch strokes
-          const alphaB = Math.round(alpha * 4) / 4
-          const speedB = Math.round(s * 4) / 4
+          const alphaB = Math.round(alpha * 4) / 4  // 5 buckets
+          const speedB = Math.round(s * 4) / 4       // 5 buckets
           const key = `${speedB},${alphaB}`
           let grp = groups.get(key)
           if (!grp) {
@@ -143,10 +143,10 @@ export function FlowOverlay() {
         for (const grp of groups.values()) {
           ctx.strokeStyle = `rgba(${grp.r},${grp.g},${grp.b},${grp.alpha})`
           ctx.beginPath()
-          const segs = grp.segs
-          for (let i = 0; i < segs.length; i += 4) {
-            ctx.moveTo(segs[i], segs[i + 1])
-            ctx.lineTo(segs[i + 2], segs[i + 3])
+          const s = grp.segs
+          for (let i = 0; i < s.length; i += 4) {
+            ctx.moveTo(s[i], s[i + 1])
+            ctx.lineTo(s[i + 2], s[i + 3])
           }
           ctx.stroke()
         }

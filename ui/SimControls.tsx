@@ -2,6 +2,12 @@
 
 import { useSimulationContext, SPEED_OPTIONS } from '@/simulation/context'
 
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: '2-digit',
+  day: '2-digit',
+  year: 'numeric',
+})
+
 export function SimControls() {
   const {
     running, setRunning,
@@ -83,6 +89,40 @@ export function SimControls() {
         <span className="text-sm">〰</span>
         currents
       </button>
+
+      <div className="overflow-hidden rounded-xl border border-white/10 bg-[#080f1f]/90 backdrop-blur-sm">
+        <div className="border-b border-white/10 px-3 py-2 text-xs">
+          <span className="text-white/30">Date</span>
+          <span className="ml-1.5 text-white/70">{DATE_FORMATTER.format(currentDate)}</span>
+        </div>
+
+        {/* Speed + play/pause row */}
+        <div className="flex items-center gap-1.5 px-3 py-2">
+          <button
+            onClick={() => setRunning(!running)}
+            className="text-white/40 hover:text-white transition-colors mr-1 text-sm leading-none"
+            title={running ? 'Pause' : 'Resume'}
+          >
+            {running ? '⏸' : '▶'}
+          </button>
+
+          <div className="w-px h-3.5 bg-white/10" />
+
+          {SPEED_OPTIONS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSpeedMultiplier(s)}
+              className={`px-2 py-0.5 rounded-md text-xs font-mono transition-colors ${
+                speedMultiplier === s
+                  ? 'bg-blue-600 text-white'
+                  : 'text-white/35 hover:text-white'
+              }`}
+            >
+              {s}×
+            </button>
+          ))}
+        </div>
+      </div>
 
     </div>
   )

@@ -19,7 +19,7 @@ export type InteractionMode = 'drag' | 'bottle'
 const ArcGISMap = dynamic(() => import('@/ui/ArcGISMap'), { ssr: false })
 
 export function OceanMap() {
-  const { bottles, addBottle, updateBottles, resetBottles } = useBottles()
+  const { bottles, addBottle, updateBottles, clearAllBottles } = useBottles()
   const [mode, setMode] = useState<InteractionMode>('drag')
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
@@ -40,7 +40,12 @@ export function OceanMap() {
         onBottleClick={setSelectedBottle}
         onMapReady={(map) => { mapRef.current = map }}
       />
-      <BottleList bottles={bottles} mapRef={mapRef} onReset={resetBottles} />
+
+      {/* Left sidebar — mode toggle + bottle list stacked */}
+      <div className="absolute left-3 top-3 bottom-3 z-[1000] w-56 flex flex-col gap-2 pointer-events-none">
+        <ModeToggle mode={mode} onChange={setMode} />
+        <BottleList bottles={bottles} mapRef={mapRef} onReset={clearAllBottles} />
+      </div>
 
       {dropTarget && (
         <DropBottleModal
@@ -50,7 +55,6 @@ export function OceanMap() {
           onBottleDropped={(bottle) => {
             addBottle(bottle)
             setDropTarget(null)
-            // Switch back to drag after dropping
             setMode('drag')
           }}
         />
@@ -59,9 +63,6 @@ export function OceanMap() {
       {selectedBottle && (
         <BottleCard bottle={selectedBottle} onClose={() => setSelectedBottle(null)} />
       )}
-
-      {/* Mode toggle — top left */}
-      <ModeToggle mode={mode} onChange={setMode} />
 
       {/* HUD — top center */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">

@@ -27,13 +27,13 @@ export function BottleList({ bottles, mapRef, onReset }: Props) {
   }
 
   return (
-    <div className="absolute left-3 top-3 bottom-3 z-[1000] w-56 flex flex-col gap-2 pointer-events-none">
+    <div className="flex flex-col gap-2 pointer-events-none min-h-0 flex-1">
       {/* Reset button */}
       <button
         onClick={onReset}
         className="pointer-events-auto w-full bg-[#080f1f]/80 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/60 hover:text-white hover:border-white/20 backdrop-blur-sm tracking-wide transition-colors text-left"
       >
-        Reset all bottles
+        Clear all bottles
       </button>
 
       {/* Bottle list */}

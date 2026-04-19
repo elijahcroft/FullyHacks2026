@@ -87,10 +87,79 @@ function ZoomControls() {
 
 const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
 const LABEL_TILE = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png'
+const WORLD_BOUNDS = L.latLngBounds([[-85, -180], [85, 180]])
 
 function MapReadyHandler({ onMapReady }: { onMapReady?: (map: L.Map) => void }) {
   const map = useMap()
   useEffect(() => { onMapReady?.(map) }, [map, onMapReady])
+  return null
+}
+
+function ViewportZoomLimiter() {
+  const map = useMap()
+
+  useEffect(() => {
+    const syncMinZoom = () => {
+      const minViewportZoom = map.getBoundsZoom(WORLD_BOUNDS, false, L.point(0, 0))
+      map.setMinZoom(minViewportZoom)
+
+      if (map.getZoom() < minViewportZoom) {
+        map.setZoom(minViewportZoom)
+      }
+    }
+
+    syncMinZoom()
+    map.on('resize', syncMinZoom)
+
+    return () => {
+      map.off('resize', syncMinZoom)
+    }
+  }, [map])
+
+  return null
+}
+
+function VerticalPanLimiter() {
+  const map = useMap()
+
+  useEffect(() => {
+    let isAdjusting = false
+
+    const clampVerticalPan = () => {
+      if (isAdjusting) return
+
+      const zoom = map.getZoom()
+      const center = map.getCenter()
+      const centerPoint = map.project(center, zoom)
+      const halfHeight = map.getSize().y / 2
+      const northLimitY = map.project(L.latLng(85, center.lng), zoom).y
+      const southLimitY = map.project(L.latLng(-85, center.lng), zoom).y
+      const minCenterY = northLimitY + halfHeight
+      const maxCenterY = southLimitY - halfHeight
+
+      if (minCenterY > maxCenterY) return
+
+      const clampedCenterY = Math.min(Math.max(centerPoint.y, minCenterY), maxCenterY)
+      if (clampedCenterY === centerPoint.y) return
+
+      isAdjusting = true
+      const clampedCenter = map.unproject(L.point(centerPoint.x, clampedCenterY), zoom)
+      map.panTo([clampedCenter.lat, center.lng], { animate: false })
+      isAdjusting = false
+    }
+
+    clampVerticalPan()
+    map.on('move', clampVerticalPan)
+    map.on('zoom', clampVerticalPan)
+    map.on('resize', clampVerticalPan)
+
+    return () => {
+      map.off('move', clampVerticalPan)
+      map.off('zoom', clampVerticalPan)
+      map.off('resize', clampVerticalPan)
+    }
+  }, [map])
+
   return null
 }
 
@@ -101,6 +170,8 @@ function MapLayers({ bottles, selectedBottle, mode, onMapClick, onBottleClick, o
       <TileLayer url={DARK_TILE} attribution='&copy; CartoDB' />
       <TileLayer url={LABEL_TILE} pane="shadowPane" />
       <MapReadyHandler onMapReady={onMapReady} />
+      <ViewportZoomLimiter />
+      <VerticalPanLimiter />
       <MapClickHandler mode={mode} onMapClick={onMapClick} />
       <CursorController mode={mode} />
       <GarbagePatchOverlay />
