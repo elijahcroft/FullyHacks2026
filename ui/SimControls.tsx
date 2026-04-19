@@ -9,6 +9,7 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
 })
 
 export function SimControls() {
+  const {
     running,
     setRunning,
     speedMultiplier,

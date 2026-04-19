@@ -16,11 +16,13 @@ import type { Bottle, MapController } from '@/types'
 import type { InteractionMode } from './OceanMap'
 import { useSimulationContext } from '@/simulation/context'
 import { buildFlowRenderer, createDrifterCurrentsLayer, flowSpeedForMultiplier } from '@/lib/arcgis/drifterCurrents'
+import { MARINE_ZONES, type OverlayType } from '@/lib/marineZones'
 
 interface Props {
   bottles: Bottle[]
   selectedBottle: Bottle | null
   mode: InteractionMode
+  activeOverlays: Set<OverlayType>
   onMapClick: (lat: number, lng: number) => void
   onBottleClick: (bottle: Bottle) => void
   onMapReady?: (map: MapController) => void
@@ -46,6 +48,7 @@ export default function ArcGISMap({
   bottles,
   selectedBottle,
   mode,
+  activeOverlays,
   onMapClick,
   onBottleClick,
   onMapReady,
@@ -110,7 +113,7 @@ export default function ArcGISMap({
     })
 
     void view.when(async () => {
-      drawStaticAnnotations(annotationLayer)
+      drawAnnotations(annotationLayer, new Set())
       syncCursor(view, modeRef.current)
     })
 
@@ -156,6 +159,11 @@ export default function ArcGISMap({
     if (!layersRef.current) return
     layersRef.current.currentsLayer.visible = showFlowField
   }, [showFlowField])
+
+  useEffect(() => {
+    if (!layersRef.current) return
+    drawAnnotations(layersRef.current.annotationLayer, activeOverlays)
+  }, [activeOverlays])
 
   useEffect(() => {
     if (!layersRef.current) return
@@ -220,9 +228,40 @@ function createPublicOceanBasemap() {
   })
 }
 
-function drawStaticAnnotations(layer: GraphicsLayer) {
+function hexToRgba(hex: string, alpha: number): number[] {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return [r, g, b, alpha]
+}
+
+function drawAnnotations(layer: GraphicsLayer, activeOverlays: Set<OverlayType>) {
   layer.removeAll()
 
+  const marineGraphics: Graphic[] = []
+  for (const zone of MARINE_ZONES) {
+    if (!activeOverlays.has(zone.type)) continue
+    const [south, west, north, east] = zone.bounds
+    marineGraphics.push(
+      new Graphic({
+        geometry: new Polygon({
+          rings: [[[west, south], [east, south], [east, north], [west, north], [west, south]]],
+          spatialReference: { wkid: 4326 },
+        }),
+        symbol: {
+          type: 'simple-fill',
+          color: hexToRgba(zone.color, 0.12),
+          outline: { color: hexToRgba(zone.color, 0.7), width: 1, style: 'dash' },
+        },
+      })
+    )
+  }
+  if (marineGraphics.length) layer.addMany(marineGraphics)
+
+  drawStaticAnnotations(layer)
+}
+
+function drawStaticAnnotations(layer: GraphicsLayer) {
   layer.addMany([
     new Graphic({
       geometry: new Polygon({
