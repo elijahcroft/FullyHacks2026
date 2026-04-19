@@ -1,7 +1,6 @@
 'use client'
 /**
  * PERSON 1 — Map + UI
- * App shell. Composes all pieces — no simulation or canvas logic lives here.
  */
 
 import dynamic from 'next/dynamic'
@@ -11,14 +10,22 @@ import { DropBottleModal } from './DropBottleModal'
 import { BottleCard } from './BottleCard'
 import { BottleList } from './BottleList'
 import { SimControls } from './SimControls'
+import { ModeToggle } from './ModeToggle'
 import { useBottles } from '@/canvas/useBottles'
 import { useSimulation } from '@/simulation/useSimulation'
 import type { Bottle } from '@/types'
 
+export type InteractionMode = 'drag' | 'bottle'
+
 const LeafletMap = dynamic(() => import('@/ui/LeafletMap'), { ssr: false })
 
 export function OceanMap() {
+<<<<<<< HEAD
   const { bottles, addBottle, updateBottles, resetBottles } = useBottles()
+=======
+  const { bottles, addBottle, updateBottles } = useBottles()
+  const [mode, setMode] = useState<InteractionMode>('drag')
+>>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
   const mapRef = useRef<LeafletMapInstance | null>(null)
@@ -29,7 +36,12 @@ export function OceanMap() {
     <div className="relative w-full h-full">
       <LeafletMap
         bottles={bottles}
-        onMapClick={(lat, lng) => setDropTarget({ lat, lng })}
+        selectedBottle={selectedBottle}
+        mode={mode}
+        onMapClick={(lat, lng) => {
+          setSelectedBottle(null)
+          setDropTarget({ lat, lng })
+        }}
         onBottleClick={setSelectedBottle}
         onMapReady={(map) => { mapRef.current = map }}
       />
@@ -43,6 +55,8 @@ export function OceanMap() {
           onBottleDropped={(bottle) => {
             addBottle(bottle)
             setDropTarget(null)
+            // Switch back to drag after dropping
+            setMode('drag')
           }}
         />
       )}
@@ -51,11 +65,15 @@ export function OceanMap() {
         <BottleCard bottle={selectedBottle} onClose={() => setSelectedBottle(null)} />
       )}
 
+      {/* Mode toggle — top left */}
+      <ModeToggle mode={mode} onChange={setMode} />
+
+      {/* HUD — top center */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">
         <div className="bg-[#080f1f]/80 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/40 backdrop-blur-sm tracking-wide">
           {bottles.length} bottle{bottles.length !== 1 ? 's' : ''} adrift
           <span className="mx-2 text-white/15">·</span>
-          click the ocean to drop one
+          {mode === 'bottle' ? 'click the ocean to drop' : 'drag to explore'}
         </div>
       </div>
 
