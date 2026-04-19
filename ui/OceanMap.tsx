@@ -19,7 +19,7 @@ export type InteractionMode = 'drag' | 'bottle'
 const ArcGISMap = dynamic(() => import('@/ui/ArcGISMap'), { ssr: false })
 
 export function OceanMap() {
-  const { bottles, addBottle, updateBottles, resetBottles } = useBottles()
+  const { bottles, addBottles, updateBottles, resetBottles } = useBottles()
   const [mode, setMode] = useState<InteractionMode>('drag')
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
@@ -52,8 +52,8 @@ export function OceanMap() {
           lat={dropTarget.lat}
           lng={dropTarget.lng}
           onClose={() => setDropTarget(null)}
-          onBottleDropped={(bottle) => {
-            addBottle(bottle)
+          onBottleDropped={(spawnedBottles) => {
+            addBottles(spawnedBottles)
             setDropTarget(null)
             // Switch back to drag after dropping
             setMode('drag')

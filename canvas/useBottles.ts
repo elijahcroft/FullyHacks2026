@@ -28,6 +28,16 @@ export function useBottles() {
     })
   }
 
+  const addBottles = (incoming: Bottle[]) => {
+    if (incoming.length === 0) return
+
+    setBottles((prev) => {
+      const next = [...incoming, ...prev]
+      saveBottles(next)
+      return next
+    })
+  }
+
   // Called by useSimulation on every tick with updated positions
   const updateBottles = (updated: Bottle[]) => {
     setBottles((prev) => {
@@ -43,7 +53,7 @@ export function useBottles() {
     setBottles(DEMO_BOTTLES)
   }
 
-  return { bottles, addBottle, updateBottles, resetBottles }
+  return { bottles, addBottle, addBottles, updateBottles, resetBottles }
 }
 
 // ---- Demo data (shown until the user drops their first bottle) -------------
