@@ -23,6 +23,8 @@ const DEG_PER_METER = 1 / 111_000
 
 // How often to record a path waypoint (simulated days)
 const PATH_SAMPLE_INTERVAL = 30
+
+// Maximum waypoints kept per bottle (older ones are dropped)
 const MAX_PATH_LENGTH = 500
 
 const DEFAULT_OPTIONS: TickOptions = {

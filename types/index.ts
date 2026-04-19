@@ -1,5 +1,14 @@
 // Shared types — everyone imports from here
 
+export interface SpillMarker {
+  id: string
+  lat: number
+  lng: number
+  placed_at: string
+  /** Predicted positions at day 0, 1, 2, …  (index == day number, no turbulence) */
+  driftPath: [number, number][]
+}
+
 export type BottleStatus = 'drifting' | 'garbage_patch' | 'ashore'
 
 export interface Bottle {

@@ -33,7 +33,7 @@ export function BottleList({ bottles, mapRef, onReset }: Props) {
         onClick={onReset}
         className="pointer-events-auto w-full bg-[#080f1f]/80 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/60 hover:text-white hover:border-white/20 backdrop-blur-sm tracking-wide transition-colors text-left"
       >
-        Reset all bottles
+        Clear all bottles
       </button>
 
       {/* Bottle list */}

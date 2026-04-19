@@ -13,6 +13,9 @@ interface SimulationContextValue {
   setStartDate: (d: Date) => void
   simDate: Date
   setSimDate: (d: Date) => void
+  daysElapsed: number
+  setDaysElapsed: (v: number) => void
+  simulationStartIso: string
 }
 
 const SimulationContext = createContext<SimulationContextValue | null>(null)
@@ -26,6 +29,8 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   const [showFlowField, setShowFlowField] = useState(true)
   const [startDate, setStartDate] = useState<Date>(() => new Date())
   const [simDate, setSimDate] = useState<Date>(() => new Date())
+  const [daysElapsed, setDaysElapsed] = useState(0)
+  const [simulationStartIso] = useState(() => new Date().toISOString())
 
   return (
     <SimulationContext.Provider value={{
@@ -34,6 +39,8 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       showFlowField, setShowFlowField,
       startDate, setStartDate,
       simDate, setSimDate,
+      daysElapsed, setDaysElapsed,
+      simulationStartIso,
     }}>
       {children}
     </SimulationContext.Provider>

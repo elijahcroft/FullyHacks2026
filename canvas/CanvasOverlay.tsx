@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
-import { normalizeLongitude, unwrapPathFromEnd, wrapLongitudeNear } from '@/lib/longitude'
+import { normalizeLongitude, wrapLongitudeNear } from '@/lib/longitude'
 import type { Bottle } from '@/types'
 
 interface Props {
@@ -53,6 +53,7 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
     const draw = (ts: number) => {
       const ctx = canvas.getContext('2d')!
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const viewportCenterX = canvas.width / 2
 
       for (const bottle of bottlesRef.current) {
         // Initialise render position on first sight, then lerp toward actual
@@ -66,10 +67,10 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
           rp.lng += (targetLng - rp.lng) * LERP
         }
 
-        const pt = map.latLngToContainerPoint([rp.lat, wrapLongitudeNear(rp.lng, map.getCenter().lng)])
+        const pt = getNearestWrappedPoint(map, rp.lat, rp.lng, viewportCenterX)
         const isSelected = selectedBottleRef.current?.id === bottle.id
 
-        drawTrail(ctx, bottle, map, rp)
+        drawTrail(ctx, bottle, map, rp, viewportCenterX)
         if (bottle.status === 'garbage_patch') drawPulseRing(ctx, pt.x, pt.y, ts)
         if (isSelected) drawSelectionRing(ctx, pt.x, pt.y, ts)
         drawGlow(ctx, pt.x, pt.y, bottle.status, isSelected)
@@ -99,13 +100,15 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
       const rect = canvas.getBoundingClientRect()
       const mx = e.clientX - rect.left
       const my = e.clientY - rect.top
+      const viewportCenterX = canvas.width / 2
       for (const bottle of bottlesRef.current) {
         const rp = renderPos.current.get(bottle.id)
-        const rawLng = rp?.lng ?? normalizeLongitude(bottle.current_lng)
-        const pt = map.latLngToContainerPoint([
+        const pt = getNearestWrappedPoint(
+          map,
           rp?.lat ?? bottle.current_lat,
-          wrapLongitudeNear(rawLng, map.getCenter().lng),
-        ])
+          rp?.lng ?? bottle.current_lng,
+          viewportCenterX,
+        )
         if (Math.hypot(mx - pt.x, my - pt.y) < 16) {
           onBottleClick(bottle)
           e.stopPropagation()
@@ -123,27 +126,49 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
 
 // ---- Drawing helpers -------------------------------------------------------
 
-function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap, rp: { lat: number; lng: number }) {
+function drawTrail(
+  ctx: CanvasRenderingContext2D,
+  bottle: Bottle,
+  map: LeafletMap,
+  rp: { lat: number; lng: number },
+  viewportCenterX: number,
+) {
   if (bottle.path.length < 2) return
 
-  const slice = unwrapPathFromEnd(bottle.path, rp.lng)
-
   const color = bottle.status === 'garbage_patch' ? '255,120,40' : '80,160,255'
+  const currentPoint = getNearestWrappedPoint(map, rp.lat, rp.lng, viewportCenterX)
+  const points = [currentPoint]
+  let referenceX = currentPoint.x
+
+  // Walk backward from the current bottle position so the whole trail
+  // stays attached to the same wrapped world copy as the visible bottle.
+  for (let i = bottle.path.length - 1; i >= 0; i--) {
+    const wp = getNearestWrappedPoint(map, bottle.path[i][0], bottle.path[i][1], referenceX)
+    points.push(wp)
+    referenceX = wp.x
+  }
+
+  points.reverse()
 
   ctx.beginPath()
-  const first = map.latLngToContainerPoint([slice[0][0], slice[0][1]])
-  ctx.moveTo(first.x, first.y)
-  for (let i = 1; i < slice.length; i++) {
-    const wp = map.latLngToContainerPoint([slice[i][0], slice[i][1]])
-    ctx.lineTo(wp.x, wp.y)
+  ctx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x, points[i].y)
   }
-  // Connect to smoothed position
-  const curLng = wrapLongitudeNear(rp.lng, slice[slice.length - 1][1])
-  const cur = map.latLngToContainerPoint([rp.lat, curLng])
-  ctx.lineTo(cur.x, cur.y)
   ctx.strokeStyle = `rgba(${color},0.2)`
   ctx.lineWidth = 1.5
   ctx.stroke()
+}
+
+function getNearestWrappedPoint(map: LeafletMap, lat: number, lng: number, referenceX: number) {
+  const point = map.latLngToContainerPoint([lat, lng])
+  const worldBounds = map.getPixelWorldBounds(map.getZoom())
+  const worldWidth = worldBounds ? worldBounds.getSize().x : 0
+
+  if (!worldWidth) return point
+
+  point.x += Math.round((referenceX - point.x) / worldWidth) * worldWidth
+  return point
 }
 
 function drawPulseRing(ctx: CanvasRenderingContext2D, x: number, y: number, ts: number) {

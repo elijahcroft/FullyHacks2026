@@ -9,8 +9,7 @@ import type { Bottle } from '@/types'
 const TICK_INTERVAL_MS = 1000
 
 export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle[]) => void) {
-  const { running, speedMultiplier, startDate, setSimDate } = useSimulationContext()
-
+  const { running, speedMultiplier, startDate, setSimDate, daysElapsed, setDaysElapsed } = useSimulationContext()
   const bottlesRef = useRef(bottles)
   const runningRef = useRef(running)
   const speedRef = useRef(speedMultiplier)
@@ -18,6 +17,8 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
   const setSimDateRef = useRef(setSimDate)
   const startDateRef = useRef(startDate)
   const simDaysRef = useRef(0)
+  const daysElapsedRef = useRef(daysElapsed)
+  const setDaysElapsedRef = useRef(setDaysElapsed)
 
   bottlesRef.current = bottles
   runningRef.current = running
@@ -25,6 +26,8 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
   updateRef.current = updateBottles
   setSimDateRef.current = setSimDate
   startDateRef.current = startDate
+  daysElapsedRef.current = daysElapsed
+  setDaysElapsedRef.current = setDaysElapsed
 
   // Trigger static field load + kick off monthly prefetch
   useEffect(() => {
@@ -63,6 +66,7 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
       }
 
       updateRef.current(current)
+      setDaysElapsedRef.current(daysElapsedRef.current + speedRef.current)
     }, TICK_INTERVAL_MS)
 
     return () => clearInterval(interval)

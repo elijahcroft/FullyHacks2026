@@ -17,7 +17,7 @@ export function useBottles() {
 
   useEffect(() => {
     const saved = loadBottles()
-    setBottles(saved.length > 0 ? saved : DEMO_BOTTLES)
+    setBottles(saved === null ? DEMO_BOTTLES : saved)
   }, [])
 
   const addBottle = (bottle: Bottle) => {
@@ -48,12 +48,12 @@ export function useBottles() {
     })
   }
 
-  const resetBottles = () => {
+  const clearAllBottles = () => {
     clearBottles()
-    setBottles(DEMO_BOTTLES)
+    setBottles([])
   }
 
-  return { bottles, addBottle, addBottles, updateBottles, resetBottles }
+  return { bottles, addBottle, addBottles, updateBottles, clearAllBottles }
 }
 
 // ---- Demo data (shown until the user drops their first bottle) -------------

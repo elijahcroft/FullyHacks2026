@@ -127,8 +127,8 @@ export function FlowOverlay() {
           const b = Math.round(200 + s * 55)
 
           // Bucket by quantised speed+alpha so we can batch strokes
-          const alphaB = Math.round(alpha * 4) / 4
-          const speedB = Math.round(s * 4) / 4
+          const alphaB = Math.round(alpha * 4) / 4  // 5 buckets
+          const speedB = Math.round(s * 4) / 4       // 5 buckets
           const key = `${speedB},${alphaB}`
           let grp = groups.get(key)
           if (!grp) {
