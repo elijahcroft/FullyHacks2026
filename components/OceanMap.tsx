@@ -46,9 +46,11 @@ export function OceanMap() {
         <BottleCard bottle={selectedBottle} onClose={() => setSelectedBottle(null)} />
       )}
 
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
-        <div className="bg-[#0d1b2e]/80 border border-blue-900/50 rounded-full px-4 py-1.5 text-xs text-blue-400 backdrop-blur-sm">
-          {bottles.length} bottle{bottles.length !== 1 ? 's' : ''} adrift · click the ocean to drop one
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">
+        <div className="bg-[#080f1f]/80 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/40 backdrop-blur-sm tracking-wide">
+          {bottles.length} bottle{bottles.length !== 1 ? 's' : ''} adrift
+          <span className="mx-2 text-white/15">·</span>
+          click the ocean to drop one
         </div>
       </div>
 
