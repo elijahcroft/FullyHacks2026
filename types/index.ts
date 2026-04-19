@@ -29,6 +29,10 @@ export interface TickOptions {
   turbulence: number
 }
 
+export interface MapController {
+  flyTo: (lat: number, lng: number, zoom?: number) => void
+}
+
 // Flow field is a grid: lat index → lng index → vector
 export type FlowField = CurrentVector[][]
 

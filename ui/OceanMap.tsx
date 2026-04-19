@@ -5,7 +5,6 @@
 
 import dynamic from 'next/dynamic'
 import { useState, useRef } from 'react'
-import type { Map as LeafletMapInstance } from 'leaflet'
 import { DropBottleModal } from './DropBottleModal'
 import { BottleCard } from './BottleCard'
 import { BottleList } from './BottleList'
@@ -13,24 +12,24 @@ import { SimControls } from './SimControls'
 import { ModeToggle } from './ModeToggle'
 import { useBottles } from '@/canvas/useBottles'
 import { useSimulation } from '@/simulation/useSimulation'
-import type { Bottle } from '@/types'
+import type { Bottle, MapController } from '@/types'
 
 export type InteractionMode = 'drag' | 'bottle'
 
-const LeafletMap = dynamic(() => import('@/ui/LeafletMap'), { ssr: false })
+const ArcGISMap = dynamic(() => import('@/ui/ArcGISMap'), { ssr: false })
 
 export function OceanMap() {
   const { bottles, addBottle, updateBottles, resetBottles } = useBottles()
   const [mode, setMode] = useState<InteractionMode>('drag')
   const [dropTarget, setDropTarget] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
-  const mapRef = useRef<LeafletMapInstance | null>(null)
+  const mapRef = useRef<MapController | null>(null)
 
   useSimulation(bottles, updateBottles)
 
   return (
     <div className="relative w-full h-full">
-      <LeafletMap
+      <ArcGISMap
         bottles={bottles}
         selectedBottle={selectedBottle}
         mode={mode}

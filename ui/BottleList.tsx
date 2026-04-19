@@ -1,12 +1,11 @@
 'use client'
 
 import type { RefObject } from 'react'
-import type { Map as LeafletMap } from 'leaflet'
-import type { Bottle } from '@/types'
+import type { Bottle, MapController } from '@/types'
 
 interface Props {
   bottles: Bottle[]
-  mapRef: RefObject<LeafletMap | null>
+  mapRef: RefObject<MapController | null>
   onReset: () => void
 }
 
@@ -24,7 +23,7 @@ const STATUS_COLOR: Record<Bottle['status'], string> = {
 
 export function BottleList({ bottles, mapRef, onReset }: Props) {
   const flyTo = (bottle: Bottle) => {
-    mapRef.current?.flyTo([bottle.current_lat, bottle.current_lng], 5, { duration: 1 })
+    mapRef.current?.flyTo(bottle.current_lat, bottle.current_lng, 5)
   }
 
   return (
