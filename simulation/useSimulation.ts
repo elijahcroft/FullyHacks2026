@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef } from 'react'
-import { loadFlowField } from '@/simulation/flowField'
+import { loadFlowField, onLiveFieldReady } from '@/simulation/flowField'
 import { tickAll } from '@/simulation/engine'
 import { useSimulationContext } from '@/simulation/context'
 import type { Bottle, FlowField, FlowFieldMeta } from '@/types'
@@ -30,6 +30,7 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
 
   useEffect(() => {
     loadFlowField().then((f) => { fieldRef.current = f })
+    onLiveFieldReady((f) => { fieldRef.current = f })
   }, [])
 
   useEffect(() => {

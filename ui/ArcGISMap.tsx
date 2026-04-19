@@ -14,7 +14,7 @@ import Polygon from '@arcgis/core/geometry/Polygon.js'
 import type { Bottle, MapController } from '@/types'
 import type { InteractionMode } from './OceanMap'
 import { useSimulationContext } from '@/simulation/context'
-import { createDrifterCurrentsLayer } from '@/lib/arcgis/drifterCurrents'
+import { buildFlowRenderer, createDrifterCurrentsLayer, flowSpeedForMultiplier } from '@/lib/arcgis/drifterCurrents'
 
 interface Props {
   bottles: Bottle[]
@@ -57,7 +57,7 @@ export default function ArcGISMap({
   const onMapClickRef = useRef(onMapClick)
   const onBottleClickRef = useRef(onBottleClick)
   const onMapReadyRef = useRef(onMapReady)
-  const { showFlowField } = useSimulationContext()
+  const { showFlowField, speedMultiplier } = useSimulationContext()
 
   modeRef.current = mode
   bottlesRef.current = bottles
@@ -68,7 +68,7 @@ export default function ArcGISMap({
   useEffect(() => {
     if (!containerRef.current) return
 
-    const currentsLayer = createDrifterCurrentsLayer()
+    const currentsLayer = createDrifterCurrentsLayer(speedMultiplier)
     const plumeLayer = new GraphicsLayer({ title: 'Spill Plume', blendMode: 'screen' })
     const trailLayer = new GraphicsLayer({ title: 'Bottle Trails' })
     const bottleLayer = new GraphicsLayer({ title: 'Bottle Particles' })
@@ -155,6 +155,13 @@ export default function ArcGISMap({
     if (!layersRef.current) return
     layersRef.current.currentsLayer.visible = showFlowField
   }, [showFlowField])
+
+  useEffect(() => {
+    if (!layersRef.current) return
+    const layer = layersRef.current.currentsLayer
+    // ArcGIS JS API requires assigning a new renderer object for reactive updates
+    layer.renderer = buildFlowRenderer(flowSpeedForMultiplier(speedMultiplier)) as unknown as ImageryTileLayer['renderer']
+  }, [speedMultiplier])
 
   useEffect(() => {
     if (!layersRef.current) return
