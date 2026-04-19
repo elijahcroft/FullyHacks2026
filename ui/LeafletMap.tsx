@@ -88,7 +88,6 @@ function ZoomControls() {
 const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
 const LABEL_TILE = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png'
 
-<<<<<<< HEAD
 function MapReadyHandler({ onMapReady }: { onMapReady?: (map: L.Map) => void }) {
   const map = useMap()
   useEffect(() => { onMapReady?.(map) }, [map, onMapReady])
@@ -96,21 +95,13 @@ function MapReadyHandler({ onMapReady }: { onMapReady?: (map: L.Map) => void }) 
 }
 
 function MapLayers({ bottles, onMapClick, onBottleClick, onMapReady }: Props) {
-=======
-function MapLayers({ bottles, selectedBottle, mode, onMapClick, onBottleClick }: Props) {
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
   const { showFlowField } = useSimulationContext()
   return (
     <>
       <TileLayer url={DARK_TILE} attribution='&copy; CartoDB' />
       <TileLayer url={LABEL_TILE} pane="shadowPane" />
-<<<<<<< HEAD
       <MapReadyHandler onMapReady={onMapReady} />
       <MapClickHandler onMapClick={onMapClick} />
-=======
-      <MapClickHandler mode={mode} onMapClick={onMapClick} />
-      <CursorController mode={mode} />
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
       <GarbagePatchOverlay />
       {showFlowField && <FlowOverlay />}
       <CanvasOverlay bottles={bottles} selectedBottle={selectedBottle} onBottleClick={onBottleClick} />
@@ -119,11 +110,7 @@ function MapLayers({ bottles, selectedBottle, mode, onMapClick, onBottleClick }:
   )
 }
 
-<<<<<<< HEAD
 export default function LeafletMap({ bottles, onMapClick, onBottleClick, onMapReady }: Props) {
-=======
-export default function LeafletMap({ bottles, selectedBottle, mode, onMapClick, onBottleClick }: Props) {
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
   return (
     <MapContainer
       center={[20, -150]}
@@ -134,17 +121,7 @@ export default function LeafletMap({ bottles, selectedBottle, mode, onMapClick, 
       zoomControl={false}
       worldCopyJump
     >
-<<<<<<< HEAD
       <MapLayers bottles={bottles} onMapClick={onMapClick} onBottleClick={onBottleClick} onMapReady={onMapReady} />
-=======
-      <MapLayers
-        bottles={bottles}
-        selectedBottle={selectedBottle}
-        mode={mode}
-        onMapClick={onMapClick}
-        onBottleClick={onBottleClick}
-      />
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
     </MapContainer>
   )
 }
