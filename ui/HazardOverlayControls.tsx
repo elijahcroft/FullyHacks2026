@@ -14,7 +14,6 @@ const ICONS: Record<OverlayType, string> = {
   'whale-migration': '🐋',
   'fishing-ground':  '🎣',
   'marine-protected':'🛡',
-  'coastline':       '🏖',
 }
 
 export function HazardOverlayControls({ activeOverlays, onToggle }: Props) {

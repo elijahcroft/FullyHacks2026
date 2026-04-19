@@ -4,7 +4,6 @@ export type OverlayType =
   | 'whale-migration'
   | 'fishing-ground'
   | 'marine-protected'
-  | 'coastline'
 
 export interface MarineZone {
   id: string
@@ -222,7 +221,7 @@ export const MARINE_ZONES: MarineZone[] = [
     name: 'Papahānaumokuākea Marine National Monument',
     description: "One of the world's largest marine protected areas. Northwestern Hawaiian Islands chain.",
     severity: 'critical',
-    bounds: [23, -180, 29, -162],
+    bounds: [18, -161, 23, -154],
     color: '#8b5cf6',
   },
   {
@@ -262,52 +261,6 @@ export const MARINE_ZONES: MarineZone[] = [
     color: '#8b5cf6',
   },
 
-  // ── Populated Coastlines / Tourist Beaches ────────────────────────────
-  {
-    id: 'coast-useast',
-    type: 'coastline',
-    name: 'US East Coast (Florida to New England)',
-    description: 'High-density population centers and major tourist beaches. Debris reaches these shores quickly via Gulf Stream.',
-    severity: 'high',
-    bounds: [25, -82, 45, -70],
-    color: '#f87171',
-  },
-  {
-    id: 'coast-mediterranean',
-    type: 'coastline',
-    name: 'Mediterranean Tourist Coastlines',
-    description: 'Densely populated tourist beaches from Spain to Turkey. Enclosed sea — debris accumulates rapidly.',
-    severity: 'high',
-    bounds: [30, -6, 46, 37],
-    color: '#f87171',
-  },
-  {
-    id: 'coast-seasia',
-    type: 'coastline',
-    name: 'SE Asia Resort Coasts (Bali, Thailand, Vietnam)',
-    description: 'Major tourism destinations and fishing communities. Debris directly impacts livelihoods and ecosystems.',
-    severity: 'high',
-    bounds: [-10, 98, 15, 115],
-    color: '#f87171',
-  },
-  {
-    id: 'coast-gulf',
-    type: 'coastline',
-    name: 'Gulf of Mexico Coastlines',
-    description: 'Tourism, fishing communities, and sensitive wetland ecosystems across the Gulf.',
-    severity: 'medium',
-    bounds: [18, -98, 30, -80],
-    color: '#f87171',
-  },
-  {
-    id: 'coast-australia-east',
-    type: 'coastline',
-    name: 'Australian East Coast (Gold Coast to Cairns)',
-    description: "Major tourism corridor. Proximity to Great Barrier Reef amplifies debris impact on marine life.",
-    severity: 'high',
-    bounds: [-27, 152, -16, 157],
-    color: '#f87171',
-  },
 ]
 
 /** Returns all zones whose bounding box contains the given lat/lng. */
@@ -327,5 +280,4 @@ export const OVERLAY_CONFIGS: Array<{ type: OverlayType; label: string; color: s
   { type: 'whale-migration', label: 'Whale Migration',        color: '#3b82f6' },
   { type: 'fishing-ground',  label: 'Fishing Grounds',        color: '#eab308' },
   { type: 'marine-protected',label: 'Marine Protected Areas', color: '#8b5cf6' },
-  { type: 'coastline',       label: 'Populated Coastlines',   color: '#f87171' },
 ]

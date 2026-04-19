@@ -23,3 +23,80 @@ html, body {
 .leaflet-control-attribution a {
   color: #4a6080 !important;
 }
+
+/* Marine zone tooltips */
+.marine-zone-tooltip {
+  background: rgba(6, 13, 26, 0.92) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 8px !important;
+  color: rgba(255,255,255,0.85) !important;
+  padding: 8px 10px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  font-size: 12px !important;
+  backdrop-filter: blur(8px);
+}
+.marine-zone-tooltip::before {
+  display: none !important;
+}
+
+/* Spill origin marker — pulsing red dot */
+.spill-marker-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.9);
+  border: 2px solid rgba(252, 100, 100, 0.9);
+  animation: spill-pulse 1.8s ease-out infinite;
+}
+
+/* Cleanup vessel marker — solid blue dot */
+.vessel-marker-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(68, 153, 255, 0.9);
+  border: 2px solid rgba(130, 190, 255, 0.9);
+  box-shadow: 0 0 8px rgba(68, 153, 255, 0.5);
+}
+
+/* SpillPanel header dot */
+.spill-pulse-dot {
+  animation: spill-pulse 1.8s ease-out infinite;
+}
+
+@keyframes spill-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(220, 38, 38, 0.55); }
+  60%  { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(220, 38, 38, 0);    }
+}
+
+/* Spill / vessel / intercept map labels */
+.spill-label-tooltip {
+  background: rgba(6, 13, 26, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  padding: 2px 6px !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(4px);
+  pointer-events: none !important;
+}
+.spill-label-tooltip::before {
+  display: none !important;
+}
+
+/* Garbage patch label */
+.garbage-patch-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: rgba(255, 107, 43, 0.55) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  pointer-events: none !important;
+}
