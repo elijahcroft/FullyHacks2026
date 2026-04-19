@@ -209,7 +209,6 @@ function createPublicOceanBasemap() {
       }),
     ],
     title: 'Ocean Dark',
-    id: 'ocean-dark-public',
   })
 }
 

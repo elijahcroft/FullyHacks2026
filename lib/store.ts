@@ -19,7 +19,11 @@ export function loadBottles(): Bottle[] {
 
 export function saveBottles(bottles: Bottle[]): void {
   if (typeof window === 'undefined') return
-  localStorage.setItem(KEY, JSON.stringify(bottles))
+  try {
+    localStorage.setItem(KEY, JSON.stringify(bottles))
+  } catch (e) {
+    console.warn('saveBottles: localStorage quota exceeded — paths may be too long', e)
+  }
 }
 
 export function clearBottles(): void {

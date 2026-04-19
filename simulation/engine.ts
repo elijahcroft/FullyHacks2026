@@ -21,7 +21,8 @@ const GARBAGE_PATCH = { latMin: 25, latMax: 45, lngMin: -155, lngMax: -135 }
 const DEG_PER_METER = 1 / 111_000
 
 // How often to record a path waypoint (simulated days)
-const PATH_SAMPLE_INTERVAL = 1
+const PATH_SAMPLE_INTERVAL = 30
+const MAX_PATH_LENGTH = 500
 
 const DEFAULT_OPTIONS: TickOptions = {
   dtDays: 1,
@@ -65,9 +66,10 @@ export function tickBottle(
     Math.floor(newDays / PATH_SAMPLE_INTERVAL) >
     Math.floor(bottle.days_drifted / PATH_SAMPLE_INTERVAL)
 
-  const newPath: [number, number][] = shouldSample
+  let newPath: [number, number][] = shouldSample
     ? [...bottle.path, [newLat, newLng]]
     : bottle.path
+  if (newPath.length > MAX_PATH_LENGTH) newPath = newPath.slice(-MAX_PATH_LENGTH)
 
   return {
     ...bottle,
