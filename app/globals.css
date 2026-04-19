@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #060d1a;
+  color: #e2e8f0;
+  font-family: system-ui, sans-serif;
+}
+
+/* Hide Leaflet attribution (keep if you want) */
+.leaflet-control-attribution {
+  background: rgba(6, 13, 26, 0.7) !important;
+  color: #4a6080 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #4a6080 !important;
+}
