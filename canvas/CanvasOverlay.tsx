@@ -24,19 +24,7 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
   const bottlesRef = useRef(bottles)
-<<<<<<< HEAD
   bottlesRef.current = bottles
-=======
-  const selectedRef = useRef(selectedBottle)
-  const speedRef = useRef(speedMultiplier)
-
-  // Smoothed render positions per bottle id
-  const renderPos = useRef<Map<string, { lat: number; lng: number }>>(new Map())
-
-  bottlesRef.current = bottles
-  selectedRef.current = selectedBottle
-  speedRef.current = speedMultiplier
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
 
   // Mount canvas
   useEffect(() => {
@@ -73,19 +61,7 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
           rp.lng += (bottle.current_lng - rp.lng) * LERP
         }
 
-<<<<<<< HEAD
         drawTrail(ctx, bottle, map)
-=======
-        // Wrap longitude into [-180, 180] so bottles don't vanish at the antimeridian
-        const wrappedLng = ((rp.lng + 180) % 360 + 360) % 360 - 180
-        const pt = map.latLngToContainerPoint([rp.lat, wrappedLng])
-        // Generous buffer so bottles near the edge don't pop in/out
-        if (pt.x < -120 || pt.x > canvas.width + 120 || pt.y < -120 || pt.y > canvas.height + 120) continue
-
-        const isSelected = selectedRef.current?.id === bottle.id
-
-        drawTrail(ctx, bottle, rp, map, speedRef.current)
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
         if (bottle.status === 'garbage_patch') drawPulseRing(ctx, pt.x, pt.y, ts)
         if (isSelected) drawSelectionRing(ctx, pt.x, pt.y, ts)
         drawGlow(ctx, pt.x, pt.y, bottle.status, isSelected)
@@ -137,7 +113,6 @@ export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props)
 
 // ---- Drawing helpers -------------------------------------------------------
 
-<<<<<<< HEAD
 type LeafletMap = ReturnType<typeof useMap>
 
 function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap) {
@@ -145,19 +120,6 @@ function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMa
 
   const slice = bottle.path
 
-=======
-function drawTrail(
-  ctx: CanvasRenderingContext2D,
-  bottle: Bottle,
-  rp: { lat: number; lng: number },
-  map: LeafletMap,
-  speed: number,
-) {
-  if (bottle.path.length < 2) return
-
-  const maxWaypoints = Math.min(bottle.path.length, 6 + Math.floor(Math.log10(Math.max(speed, 1)) * 4))
-  const slice = bottle.path.slice(-maxWaypoints)
->>>>>>> 29a5078de118f70b3a661c93f31b5cae884dac40
   const color = bottle.status === 'garbage_patch' ? '255,120,40' : '80,160,255'
 
   ctx.beginPath()
