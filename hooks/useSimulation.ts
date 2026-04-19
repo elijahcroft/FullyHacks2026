@@ -40,13 +40,19 @@ export function useSimulation(bottles: Bottle[], updateBottles: (updated: Bottle
       const drifting = bottlesRef.current.filter((b) => b.status === 'drifting')
       if (drifting.length === 0) return
 
-      const updated = tickAll(drifting, field, meta, {
-        dtDays: 1,
-        speedMultiplier: speedRef.current,
-        turbulence: 0.05,
-      })
+      // Run speedMultiplier sub-ticks of 1 simulated day each.
+      // Same total displacement as before, but in small steps — path waypoints
+      // record correctly and status detection fires mid-loop instead of skipping over.
+      let current = drifting
+      for (let i = 0; i < speedRef.current; i++) {
+        current = tickAll(current, field, meta, {
+          dtDays: 1,
+          speedMultiplier: 1,
+          turbulence: 0.05,
+        })
+      }
 
-      updateRef.current(updated)
+      updateRef.current(current)
     }, TICK_INTERVAL_MS)
 
     return () => clearInterval(interval)
