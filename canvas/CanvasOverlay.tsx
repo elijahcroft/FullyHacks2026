@@ -1,15 +1,6 @@
 'use client'
 /**
  * PERSON 4 — Canvas Rendering + Visual Effects
- *
- * Renders all bottles on a canvas that sits on top of the Leaflet map.
- * Must be mounted inside a react-leaflet <MapContainer>.
- *
- * Uses requestAnimationFrame for smooth 60fps animation.
- * Re-projects lat/lng → pixels every frame via map.latLngToContainerPoint()
- * so the canvas stays aligned during pan/zoom automatically.
- *
- * Reads speedMultiplier from SimulationContext to scale trail length.
  */
 
 import { useEffect, useRef } from 'react'
@@ -19,43 +10,49 @@ import type { Bottle } from '@/types'
 
 interface Props {
   bottles: Bottle[]
+  selectedBottle: Bottle | null
   onBottleClick: (bottle: Bottle) => void
 }
 
-export function CanvasOverlay({ bottles, onBottleClick }: Props) {
+// How fast rendered position chases actual position (per frame at 60fps).
+// 0.08 = smooth ~0.8s catch-up. Higher = snappier, lower = laggier.
+const LERP = 0.08
+
+type LeafletMap = ReturnType<typeof useMap>
+
+export function CanvasOverlay({ bottles, selectedBottle, onBottleClick }: Props) {
   const map = useMap()
   const { speedMultiplier } = useSimulationContext()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
   const bottlesRef = useRef(bottles)
+  const selectedRef = useRef(selectedBottle)
   const speedRef = useRef(speedMultiplier)
+
+  // Smoothed render positions per bottle id
+  const renderPos = useRef<Map<string, { lat: number; lng: number }>>(new Map())
+
   bottlesRef.current = bottles
+  selectedRef.current = selectedBottle
   speedRef.current = speedMultiplier
 
-  // Mount canvas over the map container
+  // Mount canvas
   useEffect(() => {
     const canvas = canvasRef.current!
     const container = map.getContainer()
     container.style.position = 'relative'
     Object.assign(canvas.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      zIndex: '400',
-      pointerEvents: 'none',
+      position: 'absolute', top: '0', left: '0',
+      zIndex: '400', pointerEvents: 'none',
     })
-
-    const resize = () => {
-      canvas.width = container.clientWidth
-      canvas.height = container.clientHeight
-    }
+    const resize = () => { canvas.width = container.clientWidth; canvas.height = container.clientHeight }
     resize()
     const ro = new ResizeObserver(resize)
     ro.observe(container)
     return () => ro.disconnect()
   }, [map])
 
-  // 60fps draw loop
+  // 60fps draw loop with lerp
   useEffect(() => {
     const canvas = canvasRef.current!
 
@@ -64,12 +61,33 @@ export function CanvasOverlay({ bottles, onBottleClick }: Props) {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       for (const bottle of bottlesRef.current) {
-        const pt = map.latLngToContainerPoint([bottle.current_lat, bottle.current_lng])
+        // Initialise render position on first sight, then lerp toward actual
+        let rp = renderPos.current.get(bottle.id)
+        if (!rp) {
+          rp = { lat: bottle.current_lat, lng: bottle.current_lng }
+          renderPos.current.set(bottle.id, rp)
+        } else {
+          rp.lat += (bottle.current_lat - rp.lat) * LERP
+          rp.lng += (bottle.current_lng - rp.lng) * LERP
+        }
+
+        const pt = map.latLngToContainerPoint([rp.lat, rp.lng])
         if (pt.x < -30 || pt.x > canvas.width + 30 || pt.y < -30 || pt.y > canvas.height + 30) continue
 
-        drawTrail(ctx, bottle, map, speedRef.current)
+        const isSelected = selectedRef.current?.id === bottle.id
+
+        drawTrail(ctx, bottle, rp, map, speedRef.current)
         if (bottle.status === 'garbage_patch') drawPulseRing(ctx, pt.x, pt.y, ts)
-        drawGlow(ctx, pt.x, pt.y, bottle.status)
+        if (isSelected) drawSelectionRing(ctx, pt.x, pt.y, ts)
+        drawGlow(ctx, pt.x, pt.y, bottle.status, isSelected)
+      }
+
+      // Clean up render positions for removed bottles
+      if (renderPos.current.size > bottlesRef.current.length + 10) {
+        const ids = new Set(bottlesRef.current.map(b => b.id))
+        for (const id of renderPos.current.keys()) {
+          if (!ids.has(id)) renderPos.current.delete(id)
+        }
       }
 
       rafRef.current = requestAnimationFrame(draw)
@@ -89,8 +107,9 @@ export function CanvasOverlay({ bottles, onBottleClick }: Props) {
       const mx = e.clientX - rect.left
       const my = e.clientY - rect.top
       for (const bottle of bottlesRef.current) {
-        const pt = map.latLngToContainerPoint([bottle.current_lat, bottle.current_lng])
-        if (Math.hypot(mx - pt.x, my - pt.y) < 14) {
+        const rp = renderPos.current.get(bottle.id)
+        const pt = map.latLngToContainerPoint([rp?.lat ?? bottle.current_lat, rp?.lng ?? bottle.current_lng])
+        if (Math.hypot(mx - pt.x, my - pt.y) < 16) {
           onBottleClick(bottle)
           e.stopPropagation()
           return
@@ -107,31 +126,30 @@ export function CanvasOverlay({ bottles, onBottleClick }: Props) {
 
 // ---- Drawing helpers -------------------------------------------------------
 
-type LeafletMap = ReturnType<typeof useMap>
-
-function drawTrail(ctx: CanvasRenderingContext2D, bottle: Bottle, map: LeafletMap, speed: number) {
+function drawTrail(
+  ctx: CanvasRenderingContext2D,
+  bottle: Bottle,
+  rp: { lat: number; lng: number },
+  map: LeafletMap,
+  speed: number,
+) {
   if (bottle.path.length < 2) return
 
-  // Show more trail waypoints at higher speeds
-  const maxWaypoints = Math.min(bottle.path.length, 6 + Math.floor(Math.log10(speed) * 4))
+  const maxWaypoints = Math.min(bottle.path.length, 6 + Math.floor(Math.log10(Math.max(speed, 1)) * 4))
   const slice = bottle.path.slice(-maxWaypoints)
-
   const color = bottle.status === 'garbage_patch' ? '255,120,40' : '80,160,255'
 
   ctx.beginPath()
   const first = map.latLngToContainerPoint([slice[0][0], slice[0][1]])
   ctx.moveTo(first.x, first.y)
-
   for (let i = 1; i < slice.length; i++) {
     const wp = map.latLngToContainerPoint([slice[i][0], slice[i][1]])
     ctx.lineTo(wp.x, wp.y)
   }
-
-  // Connect trail to current position
-  const cur = map.latLngToContainerPoint([bottle.current_lat, bottle.current_lng])
+  // Connect to smoothed position
+  const cur = map.latLngToContainerPoint([rp.lat, rp.lng])
   ctx.lineTo(cur.x, cur.y)
-
-  ctx.strokeStyle = `rgba(${color},0.18)`
+  ctx.strokeStyle = `rgba(${color},0.2)`
   ctx.lineWidth = 1.5
   ctx.stroke()
 }
@@ -140,24 +158,39 @@ function drawPulseRing(ctx: CanvasRenderingContext2D, x: number, y: number, ts: 
   const t = (ts % 1800) / 1800
   ctx.beginPath()
   ctx.arc(x, y, 8 + t * 20, 0, Math.PI * 2)
-  ctx.strokeStyle = `rgba(255,120,40,${0.6 * (1 - t)})`
+  ctx.strokeStyle = `rgba(255,120,40,${0.5 * (1 - t)})`
   ctx.lineWidth = 1.5
   ctx.stroke()
 }
 
-function drawGlow(ctx: CanvasRenderingContext2D, x: number, y: number, status: Bottle['status']) {
-  const color = status === 'garbage_patch' ? '255,120,40' : '80,180,255'
+function drawSelectionRing(ctx: CanvasRenderingContext2D, x: number, y: number, ts: number) {
+  const pulse = 0.6 + 0.4 * Math.sin(ts / 300)
+  ctx.beginPath()
+  ctx.arc(x, y, 18, 0, Math.PI * 2)
+  ctx.strokeStyle = `rgba(255,255,255,${pulse * 0.8})`
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+}
 
-  const glow = ctx.createRadialGradient(x, y, 0, x, y, 14)
-  glow.addColorStop(0, `rgba(${color},0.7)`)
+function drawGlow(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  status: Bottle['status'],
+  isSelected: boolean,
+) {
+  const color = status === 'garbage_patch' ? '255,120,40' : '80,180,255'
+  const radius = isSelected ? 20 : 14
+
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, radius)
+  glow.addColorStop(0, `rgba(${color},${isSelected ? 0.9 : 0.7})`)
   glow.addColorStop(1, `rgba(${color},0)`)
   ctx.beginPath()
-  ctx.arc(x, y, 14, 0, Math.PI * 2)
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
   ctx.fillStyle = glow
   ctx.fill()
 
   ctx.beginPath()
-  ctx.arc(x, y, 3, 0, Math.PI * 2)
+  ctx.arc(x, y, isSelected ? 4 : 3, 0, Math.PI * 2)
   ctx.fillStyle = `rgba(${color},1)`
   ctx.fill()
 }

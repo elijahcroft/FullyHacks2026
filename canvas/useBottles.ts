@@ -6,15 +6,19 @@
  * The simulation tick loop calls updateBottles() to move bottles forward.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadBottles, saveBottles } from '@/lib/store'
 import type { Bottle } from '@/types'
 
 export function useBottles() {
-  const [bottles, setBottles] = useState<Bottle[]>(() => {
+  // Start empty so server and client render the same thing (no hydration mismatch).
+  // Populate from localStorage after mount.
+  const [bottles, setBottles] = useState<Bottle[]>([])
+
+  useEffect(() => {
     const saved = loadBottles()
-    return saved.length > 0 ? saved : DEMO_BOTTLES
-  })
+    setBottles(saved.length > 0 ? saved : DEMO_BOTTLES)
+  }, [])
 
   const addBottle = (bottle: Bottle) => {
     setBottles((prev) => {

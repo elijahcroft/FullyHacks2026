@@ -26,7 +26,8 @@ export function OceanMap() {
     <div className="relative w-full h-full">
       <LeafletMap
         bottles={bottles}
-        onMapClick={(lat, lng) => setDropTarget({ lat, lng })}
+        selectedBottle={selectedBottle}
+        onMapClick={(lat, lng) => { setSelectedBottle(null); setDropTarget({ lat, lng }) }}
         onBottleClick={setSelectedBottle}
       />
 
