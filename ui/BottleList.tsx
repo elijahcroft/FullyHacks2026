@@ -28,7 +28,7 @@ export function BottleList({ bottles, mapRef, onReset }: Props) {
   }
 
   return (
-    <div className="absolute left-3 top-3 bottom-3 z-[1000] w-56 flex flex-col gap-2 pointer-events-none">
+    <div className="flex flex-col gap-2 pointer-events-none min-h-0 flex-1">
       {/* Reset button */}
       <button
         onClick={onReset}

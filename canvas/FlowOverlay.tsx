@@ -15,7 +15,7 @@ import { useMap } from 'react-leaflet'
 import { loadFlowField, sampleFlowField } from '@/simulation/flowField'
 import type { FlowField, FlowFieldMeta } from '@/types'
 
-const N_PARTICLES = 3000
+const N_PARTICLES = 1000
 const VISUAL_SCALE = 0.004  // degrees moved per frame (visual, not physical)
 const MAX_AGE      = 120    // frames before particle respawns
 
@@ -82,6 +82,10 @@ export function FlowOverlay() {
         const { field, meta } = fieldRef.current
         const particles = particlesRef.current
 
+        // Batch segments by color+alpha bucket to avoid one stroke() per particle.
+        // 5 speed buckets × 5 alpha buckets = ≤25 draw calls per frame instead of N_PARTICLES.
+        const groups = new Map<string, { r: number; g: number; b: number; alpha: number; segs: number[] }>()
+
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i]
           p.age++
@@ -122,11 +126,28 @@ export function FlowOverlay() {
           const g = Math.round(80  + s * 150)
           const b = Math.round(200 + s * 55)
 
+          // Bucket by quantised speed+alpha so we can batch strokes
+          const alphaB = Math.round(alpha * 4) / 4  // 5 buckets
+          const speedB = Math.round(s * 4) / 4       // 5 buckets
+          const key = `${speedB},${alphaB}`
+          let grp = groups.get(key)
+          if (!grp) {
+            grp = { r, g, b, alpha: alphaB, segs: [] }
+            groups.set(key, grp)
+          }
+          grp.segs.push(oldPt.x, oldPt.y, newPt.x, newPt.y)
+        }
+
+        // One beginPath/stroke per bucket instead of one per particle
+        ctx.lineWidth = 1
+        for (const grp of groups.values()) {
+          ctx.strokeStyle = `rgba(${grp.r},${grp.g},${grp.b},${grp.alpha})`
           ctx.beginPath()
-          ctx.moveTo(oldPt.x, oldPt.y)
-          ctx.lineTo(newPt.x, newPt.y)
-          ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`
-          ctx.lineWidth = 1
+          const s = grp.segs
+          for (let i = 0; i < s.length; i += 4) {
+            ctx.moveTo(s[i], s[i + 1])
+            ctx.lineTo(s[i + 2], s[i + 3])
+          }
           ctx.stroke()
         }
       }
