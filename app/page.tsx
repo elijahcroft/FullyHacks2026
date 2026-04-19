@@ -1,6 +1,6 @@
 // PERSON 1 — Map + UI
-import { OceanMap } from '@/components/OceanMap'
-import { SimulationProvider } from '@/context/SimulationContext'
+import { OceanMap } from '@/ui/OceanMap'
+import { SimulationProvider } from '@/simulation/context'
 
 export default function Home() {
   return (

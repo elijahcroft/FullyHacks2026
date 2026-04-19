@@ -9,11 +9,11 @@ import { useState } from 'react'
 import { DropBottleModal } from './DropBottleModal'
 import { BottleCard } from './BottleCard'
 import { SimControls } from './SimControls'
-import { useBottles } from '@/hooks/useBottles'
-import { useSimulation } from '@/hooks/useSimulation'
+import { useBottles } from '@/canvas/useBottles'
+import { useSimulation } from '@/simulation/useSimulation'
 import type { Bottle } from '@/types'
 
-const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false })
+const LeafletMap = dynamic(() => import('@/ui/LeafletMap'), { ssr: false })
 
 export function OceanMap() {
   const { bottles, addBottle, updateBottles } = useBottles()

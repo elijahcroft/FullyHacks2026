@@ -10,7 +10,7 @@
  *   Speed multiplier (1x, 10x, 100x, 1000x) is applied by the caller.
  */
 
-import { sampleFlowField } from './currentField'
+import { sampleFlowField } from './flowField'
 import type { Bottle, BottleStatus, FlowField, FlowFieldMeta, TickOptions } from '@/types'
 
 // Great Pacific Garbage Patch bounding box

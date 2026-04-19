@@ -14,7 +14,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
-import { useSimulationContext } from '@/context/SimulationContext'
+import { useSimulationContext } from '@/simulation/context'
 import type { Bottle } from '@/types'
 
 interface Props {

@@ -12,7 +12,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
-import { loadFlowField, sampleFlowField } from '@/lib/currentField'
+import { loadFlowField, sampleFlowField } from '@/simulation/flowField'
 import type { FlowField, FlowFieldMeta } from '@/types'
 
 const N_PARTICLES = 3000

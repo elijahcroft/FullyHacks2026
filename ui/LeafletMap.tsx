@@ -11,9 +11,9 @@
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
-import { CanvasOverlay } from './CanvasOverlay'
-import { FlowOverlay } from './FlowOverlay'
-import { useSimulationContext } from '@/context/SimulationContext'
+import { CanvasOverlay } from '@/canvas/CanvasOverlay'
+import { FlowOverlay } from '@/canvas/FlowOverlay'
+import { useSimulationContext } from '@/simulation/context'
 import type { Bottle } from '@/types'
 import L from 'leaflet'
 

@@ -3,7 +3,7 @@
  * PERSON 1 — Map + UI
  */
 
-import { useSimulationContext, SPEED_OPTIONS } from '@/context/SimulationContext'
+import { useSimulationContext, SPEED_OPTIONS } from '@/simulation/context'
 
 export function SimControls() {
   const { running, setRunning, speedMultiplier, setSpeedMultiplier, showFlowField, setShowFlowField } = useSimulationContext()

@@ -8,9 +8,9 @@
  */
 
 import { useEffect, useRef } from 'react'
-import { loadFlowField } from '@/lib/currentField'
-import { tickAll } from '@/lib/simulation'
-import { useSimulationContext } from '@/context/SimulationContext'
+import { loadFlowField } from '@/simulation/flowField'
+import { tickAll } from '@/simulation/engine'
+import { useSimulationContext } from '@/simulation/context'
 import type { Bottle, FlowField, FlowFieldMeta } from '@/types'
 
 const TICK_INTERVAL_MS = 1000
