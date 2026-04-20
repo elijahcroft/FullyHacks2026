@@ -1,10 +1,10 @@
 // simulation.worker.ts - Runs simulation in background thread
 import { loadFlowField, getFieldForMonth, FLOW_FIELD_META } from './flowField'
 import { tickAll } from './engine'
-import type { BottleLike } from '@/types'
+import type { Bottle } from '@/types'
 
 let cachedField: any = null
-let bottles: BottleLike[] = []
+let bottles: Bottle[] = []
 let running = false
 let speedMultiplier = 1
 let simDays = 0
@@ -33,7 +33,6 @@ function tick() {
     dtDays: speedMultiplier * 0.1,
     speedMultiplier: 1,
     turbulence: 0.05,
-    bottleCount: drifting.length,
   })
 
   // Send updated bottles back to main thread
