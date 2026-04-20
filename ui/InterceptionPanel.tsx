@@ -40,38 +40,38 @@ function fmtKm(km: number) {
 }
 
 // per-urgency colour tokens
-const ACCENT: Record<string, { border: string; text: string; glow: string; dot: string; badge: string; fill: string }> = {
+const ACCENT: Record<string, { borderColor: string; text: string; glow: string; dot: string; badge: string; fill: string }> = {
   critical: {
-    border: 'border-l-red-500',
-    text:   'text-red-400',
-    glow:   '0 0 60px rgba(239,68,68,0.22)',
-    dot:    'bg-red-500',
-    badge:  'bg-red-500/15 border-red-500/40 text-red-300',
-    fill:   'bg-red-500',
+    borderColor: '#ef4444',
+    text:        'text-red-400',
+    glow:        '0 0 60px rgba(239,68,68,0.22)',
+    dot:         'bg-red-500',
+    badge:       'bg-red-500/15 border-red-500/40 text-red-300',
+    fill:        'bg-red-500',
   },
   high: {
-    border: 'border-l-purple-500',
-    text:   'text-purple-400',
-    glow:   '0 0 60px rgba(168,85,247,0.22)',
-    dot:    'bg-purple-500',
-    badge:  'bg-purple-500/15 border-purple-500/40 text-purple-300',
-    fill:   'bg-purple-500',
+    borderColor: '#a855f7',
+    text:        'text-purple-400',
+    glow:        '0 0 60px rgba(168,85,247,0.22)',
+    dot:         'bg-purple-500',
+    badge:       'bg-purple-500/15 border-purple-500/40 text-purple-300',
+    fill:        'bg-purple-500',
   },
   medium: {
-    border: 'border-l-sky-500',
-    text:   'text-sky-400',
-    glow:   '0 0 60px rgba(56,189,248,0.22)',
-    dot:    'bg-sky-500',
-    badge:  'bg-sky-500/15 border-sky-500/40 text-sky-300',
-    fill:   'bg-sky-500',
+    borderColor: '#0ea5e9',
+    text:        'text-sky-400',
+    glow:        '0 0 60px rgba(56,189,248,0.22)',
+    dot:         'bg-sky-500',
+    badge:       'bg-sky-500/15 border-sky-500/40 text-sky-300',
+    fill:        'bg-sky-500',
   },
   low: {
-    border: 'border-l-emerald-500',
-    text:   'text-emerald-400',
-    glow:   '0 0 60px rgba(52,211,153,0.22)',
-    dot:    'bg-emerald-500',
-    badge:  'bg-emerald-500/15 border-emerald-500/40 text-emerald-300',
-    fill:   'bg-emerald-500',
+    borderColor: '#10b981',
+    text:        'text-emerald-400',
+    glow:        '0 0 60px rgba(52,211,153,0.22)',
+    dot:         'bg-emerald-500',
+    badge:       'bg-emerald-500/15 border-emerald-500/40 text-emerald-300',
+    fill:        'bg-emerald-500',
   },
 }
 
@@ -114,14 +114,22 @@ export function InterceptionPanel({ bottle, simDate, onClose, onInterceptionComp
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottle, fleet])
 
+  const slideClass = visible
+    ? 'translate-y-0 sm:translate-x-0'
+    : 'translate-y-full sm:translate-y-0 sm:translate-x-full'
+
   return (
     <div
-      className={`fixed top-0 right-0 bottom-0 z-[1200] w-[460px] flex flex-col border-l-4 ${accent.border} transition-transform duration-300 ease-out ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+      className={`fixed z-[1200] flex flex-col transition-transform duration-300 ease-out bottom-0 left-0 right-0 h-[70vh] rounded-t-2xl border-t-4 sm:top-0 sm:left-auto sm:w-[460px] sm:h-auto sm:rounded-none sm:border-t-0 sm:border-l-4 ${slideClass}`}
       style={{
+        borderColor: accent.borderColor,
         background: 'linear-gradient(180deg, #0a1628 0%, #080f1f 60%, #060c1a 100%)',
-        boxShadow: `-8px 0 48px rgba(0,0,0,0.7), ${accent.glow}`,
+        boxShadow: `0 0 48px rgba(0,0,0,0.6), ${accent.glow}`,
       }}
     >
+      {/* Mobile drag handle */}
+      <div className="sm:hidden w-10 h-1 bg-white/20 rounded-full mx-auto mt-3 shrink-0" />
+
       {bottle && cfg && (
         <>
           {/* ── Header ──────────────────────────────────────────────────── */}

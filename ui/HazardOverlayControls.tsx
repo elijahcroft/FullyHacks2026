@@ -21,7 +21,7 @@ export function HazardOverlayControls({ activeOverlays, onToggle }: Props) {
   const activeCount = OVERLAY_CONFIGS.filter(o => activeOverlays.has(o.type)).length
 
   return (
-    <div className="absolute top-4 right-4 z-[1100] select-none">
+    <div className="absolute top-16 right-3 sm:top-4 sm:right-4 z-[1100] select-none">
       <div className="bg-[#080f1f]/90 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm shadow-2xl min-w-[210px]">
         {/* Header toggle */}
         <button

@@ -30,6 +30,7 @@ export function OceanMap() {
   const [selectedBottle, setSelectedBottle] = useState<Bottle | null>(null)
   const [activeOverlays, setActiveOverlays] = useState<Set<OverlayType>>(new Set())
   const [interceptionData, setInterceptionData] = useState<IncidentInterception | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const mapRef = useRef<MapController | null>(null)
 
   function toggleOverlay(type: OverlayType) {
@@ -50,6 +51,12 @@ export function OceanMap() {
   function handleBottleClick(bottle: Bottle) {
     setSelectedBottle(bottle)
     mapRef.current?.flyTo(bottle.current_lat, bottle.current_lng, 5)
+    setSidebarOpen(false)
+  }
+
+  function handleModeChange(newMode: InteractionMode) {
+    setMode(newMode)
+    if (newMode === 'bottle') setSidebarOpen(false)
   }
 
   const handleInterceptionComputed = useCallback((data: IncidentInterception | null) => {
@@ -58,10 +65,6 @@ export function OceanMap() {
 
   useSimulation(bottles, updateBottles)
   const { simDate } = useSimulationContext()
-
-  const hudHint =
-    mode === 'bottle' ? 'click the ocean to report' :
-    'drag to explore'
 
   return (
     <div className="relative w-full h-full">
@@ -76,11 +79,49 @@ export function OceanMap() {
         onMapReady={(map) => { mapRef.current = map }}
       />
 
-      {/* Left sidebar — mode toggle + bottle list stacked */}
-      <div className="absolute left-3 top-3 bottom-3 z-[1000] w-56 flex flex-col gap-2 pointer-events-none">
-        <ModeToggle mode={mode} onChange={setMode} />
+      {/* Desktop left sidebar — hidden on mobile */}
+      <div className="hidden sm:flex absolute left-3 top-3 bottom-3 z-[1000] w-56 flex-col gap-2 pointer-events-none">
+        <ModeToggle mode={mode} onChange={handleModeChange} />
         <BottleList bottles={bottles} mapRef={mapRef} onReset={clearAllBottles} onSelect={handleBottleClick} />
       </div>
+
+      {/* Mobile sidebar toggle button */}
+      <button
+        onClick={() => setSidebarOpen(v => !v)}
+        className="sm:hidden absolute left-3 top-3 z-[1000] bg-[#080f1f]/90 border border-white/10 rounded-xl p-2.5 text-white/60 backdrop-blur-sm transition-colors active:bg-white/10"
+        aria-label="Toggle menu"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M2 4h14M2 9h14M2 14h14" />
+        </svg>
+      </button>
+
+      {/* Mobile sidebar drawer */}
+      {sidebarOpen && (
+        <div
+          className="sm:hidden fixed inset-0 z-[1400] bg-black/50 backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-[#080f1f] border-t border-white/10 rounded-t-2xl px-4 pt-3 pb-6 max-h-[72vh] flex flex-col gap-3"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1 shrink-0" />
+            <div className="pointer-events-auto shrink-0">
+              <ModeToggle mode={mode} onChange={(m) => { handleModeChange(m) }} />
+            </div>
+            <div className="min-h-0 flex-1 pointer-events-auto">
+              <BottleList
+                bottles={bottles}
+                mapRef={mapRef}
+                onReset={() => { clearAllBottles(); setSidebarOpen(false) }}
+                onSelect={(b) => { handleBottleClick(b); setSidebarOpen(false) }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {dropTarget && (
         <DropBottleModal
@@ -95,7 +136,7 @@ export function OceanMap() {
         />
       )}
 
-      {/* Right panel — interception analysis */}
+      {/* Right panel / bottom sheet — interception analysis */}
       <InterceptionPanel
         bottle={selectedBottle}
         simDate={simDate ?? new Date()}
@@ -105,10 +146,12 @@ export function OceanMap() {
 
       {/* HUD — top center */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none select-none">
-        <div className="bg-[#080f1f]/80 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/40 backdrop-blur-sm tracking-wide">
-          {bottles.length} incident{bottles.length !== 1 ? 's' : ''} tracked
-          <span className="mx-2 text-white/15">·</span>
-          {hudHint}
+        <div className="bg-[#080f1f]/80 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/40 backdrop-blur-sm tracking-wide whitespace-nowrap">
+          {bottles.length} incident{bottles.length !== 1 ? 's' : ''}
+          <span className="hidden sm:inline">
+            <span className="mx-2 text-white/15">·</span>
+            {mode === 'bottle' ? 'click the ocean to report' : 'drag to explore'}
+          </span>
         </div>
       </div>
 

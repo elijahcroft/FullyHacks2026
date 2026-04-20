@@ -63,9 +63,9 @@ export function GeminiChatWidget({ bottles, selectedBottle }: Props) {
   }
 
   return (
-    <div className="fixed bottom-5 left-[244px] z-[1100] flex flex-col items-start gap-2">
+    <div className="fixed bottom-24 left-3 sm:bottom-5 sm:left-[244px] z-[1100] flex flex-col items-start gap-2">
       {open && (
-        <div className="w-80 h-[440px] bg-[#080f1f] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="w-72 h-[50vh] sm:w-80 sm:h-[440px] bg-[#080f1f] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
             <div className="flex items-center gap-2">
