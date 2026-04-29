@@ -9,9 +9,9 @@ A browser-only ocean drift simulator. Users drop virtual bottles into the ocean;
 | Thing | Version | Notes |
 |---|---|---|
 | Next.js | 16.2.4 | App Router. Read `node_modules/next/dist/docs/` before writing Next.js code — APIs may differ from training data |
-| React | 19.2.4 | Use `'use client'` for anything with hooks, canvas, or Leaflet |
+| React | 19.2.4 | Use `'use client'` for anything with hooks or browser-only map code |
 | Tailwind | v4 | Config-free. No `tailwind.config.js` — use CSS variables and `@apply` in globals.css |
-| Leaflet / react-leaflet | 5.x | SSR-incompatible. Always dynamic-import map components |
+| ArcGIS Maps SDK | 5.0.17 | Browser-only. Always keep map components client-side |
 | TypeScript | strict | All types live in `/types/` |
 
 ## Architecture
@@ -20,9 +20,7 @@ A browser-only ocean drift simulator. Users drop virtual bottles into the ocean;
 page.tsx
 └── SimulationProvider (context/SimulationContext.tsx)
     └── OceanMap
-        ├── LeafletMap          ← Leaflet base map
-        ├── CanvasOverlay       ← bottles + trails drawn on HTML canvas
-        ├── FlowOverlay         ← flow field visualization
+        ├── ArcGISMap           ← ArcGIS base map + graphics layers
         └── SimControls         ← play/pause/speed UI
 ```
 
@@ -43,7 +41,7 @@ page.tsx
 
 ## Conventions
 
-- Components that use Leaflet or canvas must be `'use client'`
+- Components that use ArcGIS or other browser-only APIs must be `'use client'`
 - The tick loop in `useSimulation` intentionally has an empty dep array — refs keep it stable, do not "fix" this
 - `tickBottle` is pure and must stay pure — no side effects, no imports from `store.ts`
 - Speed options are `[1, 10, 100, 1000]` days/second — defined in `SimulationContext.tsx` as `SPEED_OPTIONS`
@@ -52,6 +50,6 @@ page.tsx
 ## What to Avoid
 
 - Do not add a backend or database — the app is intentionally offline/local
-- Do not SSR map components — Leaflet breaks on the server
+- Do not SSR map components — ArcGIS is browser-only
 - Do not mutate bottles in place — `tickBottle` returns a new object
 - Do not restart the tick loop interval unnecessarily — it causes simulation stuttering

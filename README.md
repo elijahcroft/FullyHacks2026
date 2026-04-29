@@ -35,7 +35,7 @@ This project is built with:
 * **React 19**
 * **TypeScript**
 * **Tailwind CSS 4**
-* **Leaflet / React Leaflet** for map interaction
+* **ArcGIS Maps SDK for JavaScript** for map interaction and ocean-current layers
 * **Node.js tooling** for scripts and local development
 
 ## Project Structure
